@@ -3,6 +3,19 @@
     <h2>Classroom Code: {{ classCode }}</h2>
     <button @click="toggleStudentList">학생 리스트 보기</button>
     <Whiteboard :classCode="classCode" :sender="sender" />
+
+    <!-- 수진 -->
+
+
+
+    <!-- 창규 -->
+
+
+
+    <!-- 영주 -->
+
+
+
   </div>
   <div v-if="showStudentList" class="popup">
     <h3>접속 중인 학생 리스트</h3>
