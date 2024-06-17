@@ -24,7 +24,22 @@
   <div id="classBody">
     <Whiteboard :classCode="classCode" :sender="sender" />
     <!-- Other components can be added here -->
-    
+    <!-- 수진 -->
+
+
+
+
+
+    <!-- 창규 -->
+
+
+
+
+    <!-- 영주 -->
+
+
+
+
   </div>
 
 
