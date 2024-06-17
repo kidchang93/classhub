@@ -1,40 +1,67 @@
 <template>
-  <div id="classroom">
-    <h2>Classroom Code: {{ classCode }}</h2>
-    <button @click="toggleStudentList">학생 리스트 보기</button>
+  <!-- Navigation -->
+  <nav class="navbar bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand">클래스룸</a>
+      <form class="d-flex" role="search">
+        <div class="card">
+          <div class="card-body d-flex">
+            <h5>http://localhost:5173/student/{{ classCode }}</h5>
+            <button @click="changeModalData('반 코드')" class="btn btn-sm btn-outline-secondary" type="button" 
+            data-bs-toggle="modal" data-bs-target="#exampleModalCenter">코드</button>
+            <button @click="changeModalData('QR 코드')" class="btn btn-sm btn-outline-secondary" type="button" 
+            data-bs-toggle="modal" data-bs-target="#exampleModalCenter">QR</button>
+          </div>
+        </div>
+        <button @click="toggleStudentList" class="btn btn-outline-success me-2" type="button">
+          학생리스트
+        </button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- 클래스룸 본문 -->
+  <div id="classBody">
     <Whiteboard :classCode="classCode" :sender="sender" />
-
-    <!-- 수진 -->
-
-
-
-    <!-- 창규 -->
-
-
-
-    <!-- 영주 -->
-
-
-
+    <!-- Other components can be added here -->
+    
   </div>
-  <div v-if="showStudentList" class="popup">
-    <h3>접속 중인 학생 리스트</h3>
-    <ul>
-      <li v-for="(name, sessionId) in students" :key="sessionId">{{ name }}</li>
-    </ul>
-    <button @click="toggleStudentList">닫기</button>
+
+
+
+  <!-- Student List Modal -->
+  <div v-if="showStudentListVisible" class="modal fade show" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">접속 중인 학생 리스트</h5>
+          <button type="button" class="btn-close" @click="toggleStudentList"></button>
+        </div>
+        <div class="modal-body">
+          <ul>
+            <li v-for="(name, sessionId) in students" :key="sessionId">{{ name }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <DimModal :modalData="modalData"/>
+
+
 </template>
 
 <script>
 import Whiteboard from "../components/Whiteboard.vue";
 import { mapState } from "vuex";
 import { reactive } from "vue";
+import DimModal from "../components/DimModal.vue";
 
 export default {
   name: "Classroom",
   components: {
     Whiteboard,
+    DimModal,
   },
   props: {
     classCode: {
@@ -44,12 +71,13 @@ export default {
   },
   setup() {
     const students = reactive({});
-    return { students };
+    const modalData = reactive({ modalTitle: '', modalBody: '' });
+    return { students, modalData };
   },
   data() {
     return {
       sender: this.$route.query.currentUser,
-      showStudentList: false,
+      showStudentListVisible: false,
       canLeaveSite: false,
     };
   },
@@ -108,14 +136,19 @@ export default {
       }
     },
     toggleStudentList() {
-      this.showStudentList = !this.showStudentList;
+      this.showStudentListVisible = !this.showStudentListVisible;
     },
+    changeModalData(title) {
+      this.modalData.modalTitle = title;
+      this.modalData.modalBody = this.classCode;
+    },
+
   },
 };
 </script>
 
 <style scoped>
-#classroom {
+#classBody {
   display: flex;
   flex-direction: column;
   align-items: center;
