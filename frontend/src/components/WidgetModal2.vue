@@ -6,16 +6,22 @@
         <button class="close-button" @click="closeModal">X</button>
       </div>
       <div class="modal-body">
-        <slot></slot>
+        <component :is="currentComponent" @switchComponent="switchComponent" />
       </div>
     </div>
   </div>
-
 </template>
 
 <script>
+import OXSelector from './OXSelector.vue';
+import ComponentB from './ComponentB.vue';
+
 export default {
   name: 'WidgetModal',
+  components: {
+    OXSelector,
+    ComponentB
+  },
   props: {
     isWidgetModalOpen: {
       type: Boolean,
@@ -26,9 +32,17 @@ export default {
       default: 'Modal Title2'
     }
   },
+  data() {
+    return {
+      currentComponent: 'OXSelector'
+    };
+  },
   methods: {
     closeModal() {
       this.$emit('close');
+    },
+    switchComponent(componentName) {
+      this.currentComponent = componentName;
     }
   }
 };
@@ -49,8 +63,8 @@ export default {
 .modal-window {
   background: white;
   border-radius: 8px;
-  height: 400px;
-  width: 700px;
+  width: 1200px;
+  height: 700px;
   pointer-events: all;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -79,5 +93,6 @@ export default {
 
 .modal-body {
   padding: 20px;
+  height: 80%;
 }
 </style>
