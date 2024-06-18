@@ -2,7 +2,7 @@ import { createStore } from 'vuex';
 import { Client } from "@stomp/stompjs";
 
 let stompClient = null;
-let ck = null;
+
 const createStompClient = (commit) => {
     return new Client({
         brokerURL: "ws://localhost:8080/whiteboard",

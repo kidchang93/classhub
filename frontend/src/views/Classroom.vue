@@ -22,7 +22,7 @@
 
   <!-- 클래스룸 본문 -->
   <div id="classBody">
-    <Whiteboard :classCode="classCode" :sender="sender" />
+
     <!-- Other components can be added here -->
     <!-- 수진 -->
 
@@ -40,7 +40,7 @@
 
 
   </div>
-
+  <Whiteboard :classCode="classCode" :sender="sender" />
 
 
   <!-- Student List Modal -->
