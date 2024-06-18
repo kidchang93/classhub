@@ -1,11 +1,13 @@
 <template>
   <div id="whiteboard">
-    <canvas class="fabric"
-        ref="canvas"
-        @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove"
-        @mouseup="handleMouseUp">
-    </canvas>
+<!--    <canvas class="fabric"-->
+<!--        ref="canvas"-->
+<!--        @mousedown="handleMouseDown"-->
+<!--        @mousemove="handleMouseMove"-->
+<!--        @mouseup="handleMouseUp">-->
+<!--    </canvas>-->
+    <canvas class="fabric" ref="canvas"></canvas>
+
     <div id="designTool">
       <button @click="buttonErase">모두 지우기</button>
       <br>
@@ -48,6 +50,9 @@ export default {
       // fabric
       mode:'',
       brush:'',
+      x:0,
+      y:0,
+      lineCap:'round',
       //
       canvas: null,
       drawing: false,
@@ -75,7 +80,6 @@ export default {
       strokeStyle: '',
       lineWidth: 10,
       color: '#ffffff',
-      lineCap: 'round',
       // 사각형 변수
       rectStartX: 0,
       rectStartY: 0,
@@ -92,6 +96,7 @@ export default {
         const event = this.events[newLength - 1];
         if (event) {
           this.handleIncomingDrawing(event);
+          console.log(event)
         }
       }
     );
@@ -105,124 +110,116 @@ export default {
     initCanvas() {
 
       this.canvas = new fabric.Canvas(this.$refs.canvas, {
-        width: 1850,
-        height: 837,
+        width: 1920,
+        height: 1080,
         backgroundColor: '#043e1a',
-        isDrawingMode: true,
-        brush: fabric.freeDrawingBrush,
       });
-      this.brush = fabric.freeDrawingBrush;
-      this.context = this.canvas.getContext("2d");
-      this.rect = this.$refs.canvas.getBoundingClientRect();
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
-      this.context.strokeStyle = this.color;
-      this.context.lineWidth = this.lineWidth;
-      this.context.lineCap = this.lineCap;
+      // 이벤트 리스너 추가
+      this.canvas.on('mouse:down', this.handleMouseDown)
+      this.canvas.on('mouse:move', this.handleMouseMove)
+      this.canvas.on('mouse:up', this.handleMouseUp)
 
-      console.log("initCanvas", this.rect);
+
+      console.log("initCanvas", this.canvas);
+
     },
 
 
     // 선 굵기 변경
     changLineWidth(e) {
       this.lineWidth = e.target.value;
-
-      console.log("선 굵기 : ",this.lineWidth);
+      this.canvas.freeDrawingBrush.width = this.lineWidth;
+      console.log("선 굵기 : ",this.canvas.freeDrawingBrush.width);
 
     },
     // 선 색상 변경
     changeColor(e){
       this.color = e.target.value;
-    },
-    resizeCanvas() {
-      const canvas = this.$refs.canvas;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-
-      this.scaleFactorX = canvas.width / rect.width;
-      this.scaleFactorY = canvas.height / rect.height;
-
-      this.context = canvas.getContext("2d");
-      this.context.scale(dpr, dpr);
-
-      console.log("resizeCanvas", this.scaleFactorX, this.scaleFactorY);
-    },
-    startDrawing(e) {
-      this.drawing = true;
-      this.lastX = e.offsetX * this.scaleFactorX;
-      this.lastY = e.offsetY * this.scaleFactorY;
-      console.log("startDrawing");
+      this.canvas.color = this.color;
+      console.log('색깔 : ', this.canvas.color);
     },
 
-    // 모드에 따라 변하는 event속성
-    handleMouseDown(e) {
-      // 드로잉 모드시
-      if (this.drawMode) {
-        this.drawing = true;
-        this.lastX = e.clientX - this.rect.left;
-        this.lastY = e.clientY - this.rect.top;
-      } else if (this.rectMode){
+    // brush 선택시 마우스다운 핸들러 들어갔을 때 수행하는 함수
+    onBrush(event){
+      // 포인터를 통해 현재 x,y 좌표 구하기.
+      let brush = this.canvas.freeDrawingBrush;
+      brush.width = parseInt(this.lineWidth) || 1
+      this.canvas.isDrawingMode = true;
+      const pointer = this.canvas.getPointer(event.e);
+      this.x = pointer.x;
+      this.y = pointer.y;
+
+      this.canvas.freeDrawingBrush.width = this.lineWidth;
+      this.canvas.color = this.color;
+
+
+
+      console.log('x좌표 : ' ,this.x);
+      console.log('y좌표 : ' ,this.y);
+      console.log('lineWidth : ' ,this.canvas.freeDrawingBrush.width);
+      console.log('color : ' ,this.canvas.color);
+    },
+    moveBrush(event){
+      // 포인터를 통해 현재 x,y 좌표 구하기.
+
+      const pointer = this.canvas.getPointer(event.e);
+
+      let brush = this.canvas.freeDrawingBrush;
+      brush.width = parseInt(this.lineWidth) || 1
+
+      const newLine = new fabric.Line([this.x, this.y, pointer.x, pointer.y], {
+        stroke: this.color,
+        strokeWidth: brush.width,
+        strokeLineCap: this.lineCap,
+        selectable: false,
+        event:false,
+      });
+      this.canvas.add(newLine);
+      this.x = pointer.x;
+      this.y = pointer.y;
+      this.prevX = this.x;
+      this.prevY = this.y;
+      console.log("mouseMove : ", brush);
+    },
+    // 이벤트 핸들러 : handleMouseDown
+    handleMouseDown(event) {
+
+      if(this.mode == ''){
+
+      } else if (this.mode == 'brush') {
+
+        this.onBrush(event)
+
+      } else if (this.mode == 'rect'){
         // 사각형 모드시
-        this.rectStartX = e.clientX - this.rect.left;
-        this.rectStartY = e.clientY - this.rect.top;
-        this.drawing = true;
-      } else if (this.arcMode){
+
+      } else if (this.mode == 'arc'){
         // 원 모드시
       }
-      console.log("현재 모드 : ",this.drawing);
+      console.log("현재 모드 : ",this.mode);
     },
-    handleMouseMove(e){
-      if (!this.drawing) return;
+    handleMouseMove(event){
+      if (this.canvas.isDrawingMode){
 
         // 드로잉 모드일 때
-      if (this.drawMode) {
+        if (this.mode == 'brush') {
+          this.moveBrush(event)
 
-        const newX = e.clientX - this.rect.left;
-        const newY = e.clientY - this.rect.top;
-        // 좌표 업데이트
+        } else if (this.rectMode){
+         // 사각형 모드일 때
 
-        this.prevX = this.lastX;
-        this.prevY = this.lastY;
-        this.context.beginPath();
-        this.context.moveTo(this.lastX, this.lastY);
-        this.context.lineTo(newX, newY);
+        } else if (this.arcMode) {
+          // 원 그리기 모드일 때
 
-        this.context.lineWidth = this.lineWidth;
-        this.context.strokeStyle = this.color;
-        this.context.stroke();
-
-        this.lastX = newX;
-        this.lastY = newY;
-
-      } else if (this.rectMode){
-       // 사각형 모드일 때
-        const x = e.clientX - this.rect.left;
-        const y = e.clientY - this.rect.top;
-        // 드로잉 될때마다 초기화
-        this.context.clearRect(0,0, this.width, this.height);
-        // 사각형 그리기
-        this.context.strokeRect(this.rectStartX, this.rectStartY, x - this.rectStartX, y - this.rectStartY);
-
-        this.context.strokeStyle = this.color;
-        this.context.lineWidth = this.lineWidth;
-        this.context.color = this.color;
-
-      } else if (this.arcMode){
-        // 원 그리기 모드일 때
-
-
+        }
       }
       // 메시지 전송
       const message = JSON.stringify({
         type: "DRAW",
         sender: this.sender,
         data: {
-          x: this.lastX,
-          y: this.lastY,
+          x: this.x,
+          y: this.y,
           prevX : this.prevX,
           prevY : this.prevY,
           color: this.color,
@@ -238,17 +235,19 @@ export default {
     },
 
     // 그리기 스탑
-    handleMouseUp() {
-      this.drawing = false;
+    handleMouseUp(event) {
+      this.canvas.isDrawingMode = false;
     },
 
     // 지우개 버튼
     buttonErase() {
       this.context.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
     },
+    // 그리기 버튼
     toggleDrawMode() {
-      this.drawMode = true;
-      this.rectMode = false;
+      this.mode = 'brush';
+      // this.canvas.isDrawingMode = true;
+      console.log(this.mode)
     },
     toggleRectMode() {
       this.drawMode = false;
