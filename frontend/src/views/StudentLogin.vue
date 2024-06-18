@@ -3,7 +3,7 @@
     <form @submit.prevent="joinClassroom">
       <label for="classCode">Class Code:</label>
       <input v-model="classCode" type="text" id="classCode" required />
-      <label for="studentName">Name:</label>
+      <label for="studentName">Student Name:</label>
       <input v-model="studentName" type="text" id="studentName" required />
       <button type="submit">Join Classroom</button>
     </form>
