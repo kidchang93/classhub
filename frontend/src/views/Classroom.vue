@@ -61,7 +61,7 @@
   </div>
 
   <DimModal :modalData="modalData"/>
-  <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
+  <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1" style="z-index: -1;"/>
   <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2"/>
 
   <button @click="toggleWidgetModal1">위젯</button>

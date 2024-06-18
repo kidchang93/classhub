@@ -24,7 +24,7 @@ public class ClassroomController {
     }
 
     @GetMapping("/{code}")
-    public Classroom getClassroomByCode(@PathVariable String code) {
+    public Classroom getClassroomByCode(@PathVariable("code") String code) {
         return classroomService.getClassroomByCode(code);
     }
 }
