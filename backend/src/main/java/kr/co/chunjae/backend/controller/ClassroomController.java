@@ -19,12 +19,12 @@ public class ClassroomController {
     private final ClassroomService classroomService;
 
     @GetMapping("/teacher/{teacherId}")
-    public Classroom getClassroomByTeacherId(@PathVariable int teacherId) {
+    public Classroom getClassroomByTeacherId(@PathVariable("teacherId") int teacherId) {
         return classroomService.getClassroomByTeacherId(teacherId);
     }
 
     @GetMapping("/{code}")
-    public Classroom getClassroomByCode(@PathVariable String code) {
+    public Classroom getClassroomByCode(@PathVariable("code") String code) {
         return classroomService.getClassroomByCode(code);
     }
 }

@@ -22,10 +22,9 @@
 
   <!-- 클래스룸 본문 -->
   <div id="classBody">
-    <Whiteboard :classCode="classCode" :sender="sender" />
+
     <!-- Other components can be added here -->
     <!-- 수진 -->
-
 
 
 
@@ -41,7 +40,7 @@
 
 
   </div>
-
+  <Whiteboard :classCode="classCode" :sender="sender" />
 
 
   <!-- Student List Modal -->
@@ -62,7 +61,7 @@
   </div>
 
   <DimModal :modalData="modalData"/>
-  <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
+  <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1" style="z-index: -1;"/>
   <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2"/>
 
   <button @click="toggleWidgetModal1">위젯</button>
