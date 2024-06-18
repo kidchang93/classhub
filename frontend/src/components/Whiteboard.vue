@@ -243,7 +243,7 @@ export default {
 <style scoped>
 #whiteboard {
   position: relative;
-  background: rgba(4, 62, 26, 0);
+  background: #043e1a;
 }
 canvas {
   display: block;

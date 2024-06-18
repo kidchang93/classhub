@@ -49,8 +49,8 @@ export default {
 .modal-window {
   background: white;
   border-radius: 8px;
-  height: 400px;
-  width: 700px;
+  width: 1200px;
+  height: 700px;
   pointer-events: all;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
