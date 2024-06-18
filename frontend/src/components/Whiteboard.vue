@@ -1,14 +1,11 @@
 <template>
   <div id="whiteboard">
-    <canvas
+    <canvas class="fabric"
         ref="canvas"
         @mousedown="handleMouseDown"
         @mousemove="handleMouseMove"
-        @mouseup="handleMouseUp"
-        style="z-index: 1"
-    >
+        @mouseup="handleMouseUp">
     </canvas>
-    <!--    <canvas ref="canvas2" style="z-index: 2;"></canvas>/-->
     <div id="designTool">
       <button @click="buttonErase">모두 지우기</button>
       <br>
@@ -22,15 +19,17 @@
 
       <button type="button" id="togglePen" ref="toggleButtonEl" @click="toggleDrawMode">그리기</button><br>
       <button type="button" id="drawing-rect" ref="drawingRectEl" @click="toggleRectMode">사각형 추가</button><br>
+      <button type="button" id="drawing-rect" ref="drawingRectEl" @click="toggleArcMode">원 추가</button><br>
       <button type="button" id="clickObject" @click="clickObject">객체 선택</button><br>
 
     </div>
   </div>
+
 </template>
 
 <script>
 import { mapState } from "vuex";
-
+import {fabric} from "fabric";
 export default {
   name: "Whiteboard",
   props: {
@@ -45,8 +44,16 @@ export default {
   },
   data() {
     return {
+
+      // fabric
+      mode:'',
+      brush:'',
+      //
+      canvas: null,
       drawing: false,
       context: null,
+      prevX: 0,
+      prevY: 0,
       lastX: 0,
       lastY: 0,
       scaleFactorX: 1,
@@ -60,6 +67,7 @@ export default {
       // 캔버스 모드 변수
       drawMode:false,
       rectMode:false,
+      arcMode: false,
       // 두 수의 차이
       xMinusX:0,
       yMinusY:0,
@@ -96,34 +104,25 @@ export default {
     // 캔버스 세팅
     initCanvas() {
 
-      const canvas = this.$refs.canvas;
-      this.context = canvas.getContext("2d");
+      this.canvas = new fabric.Canvas(this.$refs.canvas, {
+        width: 1850,
+        height: 837,
+        backgroundColor: '#043e1a',
+        isDrawingMode: true,
+        brush: fabric.freeDrawingBrush,
+      });
+      this.brush = fabric.freeDrawingBrush;
+      this.context = this.canvas.getContext("2d");
       this.rect = this.$refs.canvas.getBoundingClientRect();
-
-      canvas.width = this.width;
-      canvas.height = this.height;
-
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
       this.context.strokeStyle = this.color;
       this.context.lineWidth = this.lineWidth;
       this.context.lineCap = this.lineCap;
 
       console.log("initCanvas", this.rect);
     },
-    // 모드에 따라 변하는 event속성
-    handleMouseDown(e) {
-      // 사각형 모드시
-      if (this.rectMode) {
-        this.rectStartX = e.clientX - this.rect.left;
-        this.rectStartY = e.clientY - this.rect.top;
-        this.drawing = true;
-        // 드로잉 모드시
-      } else if (this.drawMode) {
-        this.drawing = true;
-        this.lastX = e.clientX - this.rect.left;
-        this.lastY = e.clientY - this.rect.top;
-      }
-      console.log("현재 모드 : ",this.drawing);
-    },
+
 
     // 선 굵기 변경
     changLineWidth(e) {
@@ -159,25 +158,35 @@ export default {
       console.log("startDrawing");
     },
 
+    // 모드에 따라 변하는 event속성
+    handleMouseDown(e) {
+      // 드로잉 모드시
+      if (this.drawMode) {
+        this.drawing = true;
+        this.lastX = e.clientX - this.rect.left;
+        this.lastY = e.clientY - this.rect.top;
+      } else if (this.rectMode){
+        // 사각형 모드시
+        this.rectStartX = e.clientX - this.rect.left;
+        this.rectStartY = e.clientY - this.rect.top;
+        this.drawing = true;
+      } else if (this.arcMode){
+        // 원 모드시
+      }
+      console.log("현재 모드 : ",this.drawing);
+    },
     handleMouseMove(e){
       if (!this.drawing) return;
 
-      // 사각형 모드일 때
-      if (this.rectMode) {
-        // this.clearRect();
-
-        const x = e.clientX - this.rect.left;
-        const y = e.clientY - this.rect.top;
-        this.context.strokeRect(this.rectStartX, this.rectStartY, x - this.rectStartX, y - this.rectStartY);
-
         // 드로잉 모드일 때
-      } else if (this.drawMode) {
+      if (this.drawMode) {
 
         const newX = e.clientX - this.rect.left;
         const newY = e.clientY - this.rect.top;
-        //   // 좌표 업데이트
-        const prevX = this.lastX;
-        const prevY = this.lastY;
+        // 좌표 업데이트
+
+        this.prevX = this.lastX;
+        this.prevY = this.lastY;
         this.context.beginPath();
         this.context.moveTo(this.lastX, this.lastY);
         this.context.lineTo(newX, newY);
@@ -189,25 +198,42 @@ export default {
         this.lastX = newX;
         this.lastY = newY;
 
-        // 메시지 전송
-        const message = JSON.stringify({
-          type: "DRAW",
-          sender: this.sender,
-          data: {
-            x: this.lastX,
-            y: this.lastY,
-            prevX,
-            prevY,
-            color: this.color,
-            lineWidth: this.lineWidth,
-          },
+      } else if (this.rectMode){
+       // 사각형 모드일 때
+        const x = e.clientX - this.rect.left;
+        const y = e.clientY - this.rect.top;
+        // 드로잉 될때마다 초기화
+        this.context.clearRect(0,0, this.width, this.height);
+        // 사각형 그리기
+        this.context.strokeRect(this.rectStartX, this.rectStartY, x - this.rectStartX, y - this.rectStartY);
+
+        this.context.strokeStyle = this.color;
+        this.context.lineWidth = this.lineWidth;
+        this.context.color = this.color;
+
+      } else if (this.arcMode){
+        // 원 그리기 모드일 때
+
+
+      }
+      // 메시지 전송
+      const message = JSON.stringify({
+        type: "DRAW",
+        sender: this.sender,
+        data: {
+          x: this.lastX,
+          y: this.lastY,
+          prevX : this.prevX,
+          prevY : this.prevY,
+          color: this.color,
+          lineWidth: this.lineWidth,
+        },
+      });
+      if (this.socket && this.socket.connected) {
+        this.socket.publish({
+          destination: `/pub/update/${this.classCode}`,
+          body: message,
         });
-        if (this.socket && this.socket.connected) {
-          this.socket.publish({
-            destination: `/pub/update/${this.classCode}`,
-            body: message,
-          });
-        }
       }
     },
 
@@ -215,6 +241,7 @@ export default {
     handleMouseUp() {
       this.drawing = false;
     },
+
     // 지우개 버튼
     buttonErase() {
       this.context.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
@@ -224,8 +251,12 @@ export default {
       this.rectMode = false;
     },
     toggleRectMode() {
-      this.rectMode = true;
       this.drawMode = false;
+      this.rectMode = true;
+    },
+    clickObject(){
+      this.drawMode = false;
+      this.rectMode = false;
     },
 
     // 메시지 수신 처리 함수
@@ -245,12 +276,25 @@ export default {
   position: relative;
   background: #043e1a;
 }
+.fabric {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 canvas {
   display: block;
 }
+
 #designTool {
+  color: black;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid black;
   position: absolute;
-  top: 10px;
-  left: 10px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  top: 20%;
+  left: 85%;
 }
 </style>
