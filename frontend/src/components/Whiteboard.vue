@@ -1,18 +1,29 @@
 <template>
   <div id="whiteboard">
     <canvas
-      ref="canvas"
-      width="800"
-      height="800"
-      @mousedown="startDrawing"
-      @mousemove="draw"
-      @mouseup="stopDrawing"
-      @mouseout="stopDrawing"
-    ></canvas>
+        ref="canvas"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        style="z-index: 1"
+    >
+    </canvas>
+    <!--    <canvas ref="canvas2" style="z-index: 2;"></canvas>/-->
     <div id="designTool">
       <button @click="buttonErase">모두 지우기</button>
-      <button @click="increaseThickness">두껍게</button>
-      <button @click="decreaseThickness">얇게</button>
+      <br>
+      <label for="drawing-line-width">Line width : </label>
+      <span class="info">{{ lineWidth }}</span>
+      <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @change="changLineWidth"><br>
+
+      <label for="drawing-color">Line color : </label>
+      <span class="info">{{ color }}</span>
+      <input type="color" :value="color" id="drawing-color" ref="drawingColorEl" @change="changeColor"><br>
+
+      <button type="button" id="togglePen" ref="toggleButtonEl" @click="toggleDrawMode">그리기</button><br>
+      <button type="button" id="drawing-rect" ref="drawingRectEl" @click="toggleRectMode">사각형 추가</button><br>
+      <button type="button" id="clickObject" @click="clickObject">객체 선택</button><br>
+
     </div>
   </div>
 </template>
@@ -40,6 +51,26 @@ export default {
       lastY: 0,
       scaleFactorX: 1,
       scaleFactorY: 1,
+      // 화면 속성 변수
+      width: 1850,
+      height: 837,
+      mouseX: 0,
+      mouseY: 0,
+      rect:{},
+      // 캔버스 모드 변수
+      drawMode:false,
+      rectMode:false,
+      // 두 수의 차이
+      xMinusX:0,
+      yMinusY:0,
+      // 속성 변수
+      strokeStyle: '',
+      lineWidth: 10,
+      color: '#ffffff',
+      lineCap: 'round',
+      // 사각형 변수
+      rectStartX: 0,
+      rectStartY: 0,
     };
   },
   computed: {
@@ -56,20 +87,54 @@ export default {
         }
       }
     );
-    window.addEventListener("resize", this.resizeCanvas);
+    // window.addEventListener("resize", this.resizeCanvas);
   },
   beforeUnmount() {
-    window.removeEventListener("resize", this.resizeCanvas);
+    // window.removeEventListener("resize", this.resizeCanvas);
   },
   methods: {
+    // 캔버스 세팅
     initCanvas() {
-      this.resizeCanvas();
+
       const canvas = this.$refs.canvas;
       this.context = canvas.getContext("2d");
-      this.context.strokeStyle = "#000000";
-      this.context.lineWidth = 10;
-      this.context.lineCap = "round";
-      console.log("initCanvas");
+      this.rect = this.$refs.canvas.getBoundingClientRect();
+
+      canvas.width = this.width;
+      canvas.height = this.height;
+
+      this.context.strokeStyle = this.color;
+      this.context.lineWidth = this.lineWidth;
+      this.context.lineCap = this.lineCap;
+
+      console.log("initCanvas", this.rect);
+    },
+    // 모드에 따라 변하는 event속성
+    handleMouseDown(e) {
+      // 사각형 모드시
+      if (this.rectMode) {
+        this.rectStartX = e.clientX - this.rect.left;
+        this.rectStartY = e.clientY - this.rect.top;
+        this.drawing = true;
+        // 드로잉 모드시
+      } else if (this.drawMode) {
+        this.drawing = true;
+        this.lastX = e.clientX - this.rect.left;
+        this.lastY = e.clientY - this.rect.top;
+      }
+      console.log("현재 모드 : ",this.drawing);
+    },
+
+    // 선 굵기 변경
+    changLineWidth(e) {
+      this.lineWidth = e.target.value;
+
+      console.log("선 굵기 : ",this.lineWidth);
+
+    },
+    // 선 색상 변경
+    changeColor(e){
+      this.color = e.target.value;
     },
     resizeCanvas() {
       const canvas = this.$refs.canvas;
@@ -93,72 +158,82 @@ export default {
       this.lastY = e.offsetY * this.scaleFactorY;
       console.log("startDrawing");
     },
-    draw(e) {
+
+    handleMouseMove(e){
       if (!this.drawing) return;
 
-      const newX = e.offsetX * this.scaleFactorX;
-      const newY = e.offsetY * this.scaleFactorY;
+      // 사각형 모드일 때
+      if (this.rectMode) {
+        // this.clearRect();
 
-      this.context.beginPath();
-      this.context.moveTo(this.lastX, this.lastY);
-      this.context.lineTo(newX, newY);
-      this.context.stroke();
+        const x = e.clientX - this.rect.left;
+        const y = e.clientY - this.rect.top;
+        this.context.strokeRect(this.rectStartX, this.rectStartY, x - this.rectStartX, y - this.rectStartY);
 
-      const prevX = this.lastX;
-      const prevY = this.lastY;
-      this.lastX = newX;
-      this.lastY = newY;
+        // 드로잉 모드일 때
+      } else if (this.drawMode) {
 
-      console.log("draw", this.lastX, this.lastY);
+        const newX = e.clientX - this.rect.left;
+        const newY = e.clientY - this.rect.top;
+        //   // 좌표 업데이트
+        const prevX = this.lastX;
+        const prevY = this.lastY;
+        this.context.beginPath();
+        this.context.moveTo(this.lastX, this.lastY);
+        this.context.lineTo(newX, newY);
 
-      const message = JSON.stringify({
-        type: "DRAW",
-        sender: this.sender,
-        data: {
-          x: this.lastX,
-          y: this.lastY,
-          prevX,
-          prevY,
-        },
-      });
-      if (this.socket && this.socket.connected) {
-        this.socket.publish({
-          destination: `/pub/update/${this.classCode}`,
-          body: message,
+        this.context.lineWidth = this.lineWidth;
+        this.context.strokeStyle = this.color;
+        this.context.stroke();
+
+        this.lastX = newX;
+        this.lastY = newY;
+
+        // 메시지 전송
+        const message = JSON.stringify({
+          type: "DRAW",
+          sender: this.sender,
+          data: {
+            x: this.lastX,
+            y: this.lastY,
+            prevX,
+            prevY,
+            color: this.color,
+            lineWidth: this.lineWidth,
+          },
         });
+        if (this.socket && this.socket.connected) {
+          this.socket.publish({
+            destination: `/pub/update/${this.classCode}`,
+            body: message,
+          });
+        }
       }
     },
-    stopDrawing() {
+
+    // 그리기 스탑
+    handleMouseUp() {
       this.drawing = false;
     },
+    // 지우개 버튼
     buttonErase() {
       this.context.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
     },
-    increaseThickness() {
-      this.context.lineWidth += 1;
-      console.log("지금 두께 : ", this.context.lineWidth);
+    toggleDrawMode() {
+      this.drawMode = true;
+      this.rectMode = false;
     },
-    decreaseThickness() {
-      if (this.context.lineWidth > 1) {
-        this.context.lineWidth -= 1;
-        console.log("지금 두께 : ", this.context.lineWidth);
-      }
+    toggleRectMode() {
+      this.rectMode = true;
+      this.drawMode = false;
     },
-    handleIncomingDrawing(event) {
-      const { type, data } = event;
+
+    // 메시지 수신 처리 함수
+    handleIncomingDrawing(message) {
+      const { type, data } = message;
       if (type === "DRAW") {
-        const { x, y, prevX, prevY } = data;
-        console.log(
-          `Handling incoming drawing from (${prevX}, ${prevY}) to (${x}, ${y})`
-        );
-
-        this.context.beginPath();
-        this.context.moveTo(prevX, prevY);
-        this.context.lineTo(x, y);
-        this.context.stroke();
-
-        this.lastX = x;
-        this.lastY = y;
+        const { x, y, prevX, prevY, color, lineWidth } = data;
+        console.log(`보낸 메세지 (${prevX}, ${prevY}) to (${x}, ${y}) & (${color}) & (${lineWidth})`);
       }
     },
   },
@@ -168,14 +243,10 @@ export default {
 <style scoped>
 #whiteboard {
   position: relative;
-  width: 100%;
-  height: 70vh;
-  background: green;
+  background: #043e1a;
 }
 canvas {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 #designTool {
   position: absolute;

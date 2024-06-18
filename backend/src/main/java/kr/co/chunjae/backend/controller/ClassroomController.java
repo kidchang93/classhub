@@ -19,7 +19,7 @@ public class ClassroomController {
     private final ClassroomService classroomService;
 
     @GetMapping("/teacher/{teacherId}")
-    public Classroom getClassroomByTeacherId(@PathVariable int teacherId) {
+    public Classroom getClassroomByTeacherId(@PathVariable("teacherId") int teacherId) {
         return classroomService.getClassroomByTeacherId(teacherId);
     }
 
