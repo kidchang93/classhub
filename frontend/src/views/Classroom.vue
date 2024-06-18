@@ -1,6 +1,6 @@
 <template>
   <!-- Navigation -->
-  <nav class="navbar bg-body-tertiary">
+  <nav class="navbar navbar-expand-lg" data-bs-theme="light">
     <div class="container-fluid">
       <a class="navbar-brand">클래스룸</a>
       <form class="d-flex" role="search">
