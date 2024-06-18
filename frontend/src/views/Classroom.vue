@@ -45,7 +45,7 @@
 
 
   <!-- Student List Modal -->
-  <div v-if="showStudentListVisible" class="modal fade show" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+  <div v-if="isStudentListOpen" class="modal fade show" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
     <div class="modal-dialog modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
@@ -62,6 +62,11 @@
   </div>
 
   <DimModal :modalData="modalData"/>
+  <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
+  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2"/>
+
+  <button @click="toggleWidgetModal1">위젯</button>
+  <button @click="toggleWidgetModal2">위젯</button>
 
 
 </template>
@@ -71,12 +76,16 @@ import Whiteboard from "../components/Whiteboard.vue";
 import { mapState } from "vuex";
 import { reactive } from "vue";
 import DimModal from "../components/DimModal.vue";
+import WidgetModal1 from "../components/WidgetModal1.vue";
+import WidgetModal2 from "../components/WidgetModal2.vue";
 
 export default {
   name: "Classroom",
   components: {
     Whiteboard,
     DimModal,
+    WidgetModal1,
+    WidgetModal2,
   },
   props: {
     classCode: {
@@ -92,8 +101,11 @@ export default {
   data() {
     return {
       sender: this.$route.query.currentUser,
-      showStudentListVisible: false,
+      isStudentListOpen: false,
       canLeaveSite: false,
+      isWidgetModalOpen1:false,
+      isWidgetModalOpen2:false,
+
     };
   },
   computed: {
@@ -151,11 +163,17 @@ export default {
       }
     },
     toggleStudentList() {
-      this.showStudentListVisible = !this.showStudentListVisible;
+      this.isStudentListOpen = !this.isStudentListOpen;
     },
     changeModalData(title) {
       this.modalData.modalTitle = title;
       this.modalData.modalBody = this.classCode;
+    },
+    toggleWidgetModal1() {
+      this.isWidgetModalOpen1 = !this.isWidgetModalOpen1;
+    },
+    toggleWidgetModal2() {
+      this.isWidgetModalOpen2 = !this.isWidgetModalOpen2;
     },
 
   },
