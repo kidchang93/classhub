@@ -43,6 +43,12 @@
           <li><a class="dropdown-item" @click="toggleMode">원</a></li>
         </ul>
       </div>
+      <br>
+      <button type="button"
+              class="btn btn-secondary"
+              data-bs-toggle="button"
+              @click="clickObject">객체 선택
+      </button>
     </div>
   </div>
 
@@ -133,12 +139,29 @@ export default {
 
       });
       // 이벤트 리스너 추가
-      this.canvas.on('mouse:down', this.handleMouseDown)
-      this.canvas.on('mouse:move', this.handleMouseMove)
-      this.canvas.on('mouse:up', this.handleMouseUp)
+      this.canvas.on('mouse:down',(e) => {
+        if (this.drawing == true){
+          this.canvas.isDrawingMode = true;
+          this.onBrush(e)
+        } else if (this.drawing == false) {
+          this.canvas.isDrawingMode = false;
+          this.selectRect(e)
+        }
+      })
+      this.canvas.on('mouse:move',(e)=>{
+        if (this.canvas.isDrawingMode == true && this.drawing == true){
+          this.moveBrush(e)
+        } else if (this.canvas.isDrawingMode == false && this.drawing == false){
+
+        }
+      })
+
+      this.canvas.on('mouse:up',(e)=>{
+        this.handleMouseUp(e)
+      })
 
 
-      console.log("initCanvas", this.canvas.evented);
+      console.log("initCanvas", this.canvas.event);
 
     },
 
@@ -193,7 +216,7 @@ export default {
         strokeWidth: brush.width,
         strokeLineCap: this.lineCap,
         selectable: false,
-        event:false,
+        event: true,
       });
       this.canvas.add(newLine);
 
@@ -203,37 +226,13 @@ export default {
       this.prevY = this.y;
       console.log("mouseMove : ", brush);
 
+      // 메세지에 newLine 객체 담아서 보내기
+      this.sendMessage(newLine);
     },
-    // 이벤트 핸들러 : handleMouseDown
-    handleMouseDown(event) {
+    // 기존 이벤트 핸들러 제거 => initial 함수에서 조건에 맞는 함수로 event 보내기
 
-      // 드로잉 모드가 활성화 됐을 때는 모드가 brush 이고
-      // 드로잉 모드가 비활성화 됐을 때는 모드가 객체 선택 모드이다. 라는 로직으로 가야될듯?
-
-
-
-      this.onBrush(event)
-
-      // this.selectRect(event)
-
-     //  if (this.mode == 'rect') {
-     //   this.canvas.isDrawingMode = false;
-     //   this.mode = 'rect'
-     //   this.selectRect(event)
-     //
-     //   console.log("렉트 왔냐 ", this.mode)
-     // }
-      console.log("현재 모드 : ",this.mode);
-    },
-    handleMouseMove(event){
-
-        // 드로잉 모드일 때
-        if ( this.canvas.isDrawingMode && this.mode == 'brush' ) {
-          this.moveBrush(event)
-        } else if (this.mode == 'rect' ) {
-
-          return
-      }
+    sendMessage(event){
+      console.log("sendMessage : ",event)
       // 메시지 전송
       const message = JSON.stringify({
         type: "DRAW",
@@ -253,13 +252,18 @@ export default {
           body: message,
         });
       }
+      console.log("메세지 전송 : ", message)
     },
+    // 사각형 객체 선택시
     selectRect(event){
       // this.canvas.isDrawingMode = false;
+      this.drawing = false;
       this.mode = 'rect';
 
       const selectRect = event.target;
-      console.log(selectRect)
+      if (selectRect == this.canvas.isActive)
+      this.canvas.renderAll();
+      console.log("selectRect : ",this.canvas.isActive)
     },
     // 사각형 도형 추가 버튼
     addRect(){
@@ -280,19 +284,27 @@ export default {
         transparentCorners: false,
         evented: true,
         event: true,
-          }
+        }
       )
 
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
+
       console.log("rect", rect);
     },
     // 그리기 스탑
-    handleMouseUp() {
+    handleMouseUp(e) {
       this.canvas.isDrawingMode = false;
+      if (this.drawing == true){
+        this.drawing = true;
+      } else if (this.drawing == false){
+        this.drawing = false;
+      }
 
-      console.log("stop")
+      this.canvas.renderAll(e);
+
+      console.log("stop", e)
     },
 
     // 전체삭제 버튼
@@ -304,11 +316,13 @@ export default {
       this.mode = 'brush';
       this.drawing = true;
       // this.canvas.isDrawingMode = true;
-      console.log(this.drawing)
     },
+    // 도형 추가 버튼
     toggleMode(mode) {
-      this.canvas.isDrawingMode = false;
+
       if (mode == 'rect'){
+        this.canvas.isDrawingMode = false;
+        this.drawing = false;
         this.mode = 'rect'
         console.log(this.mode)
         this.addRect()
@@ -319,6 +333,7 @@ export default {
     },
     clickObject(){
       this.canvas.isDrawingMode = false;
+      this.drawing = false;
     },
 
     // 메시지 수신 처리 함수
