@@ -9,21 +9,40 @@
     <canvas class="fabric" ref="canvas"></canvas>
 
     <div id="designTool">
-      <button @click="buttonErase">모두 지우기</button>
+      <button type="button" class="btn btn-secondary" @click="buttonErase">모두 지우기</button>
       <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
       <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @change="changLineWidth"><br>
 
-      <label for="drawing-color">Line color : </label>
+      <label for="drawing-color">그리기 색 : </label>
       <span class="info">{{ color }}</span>
       <input type="color" :value="color" id="drawing-color" ref="drawingColorEl" @change="changeColor"><br>
 
-      <button type="button" id="togglePen" ref="toggleButtonEl" @click="toggleDrawMode">그리기</button><br>
-      <button type="button" id="drawing-rect" ref="drawingRectEl" @click="toggleRectMode">사각형 추가</button><br>
-      <button type="button" id="drawing-rect" ref="drawingRectEl" @click="toggleArcMode">원 추가</button><br>
-      <button type="button" id="clickObject" @click="clickObject">객체 선택</button><br>
+      <label for="drawing-color">도형 색 : </label>
+      <span class="info">{{ fillColor }}</span>
+      <input type="color" :value="fillColor" id="fill-color" ref="drawingFillColorEl" @change="changeFillColor"><br>
 
+      <button type="button"
+              class="btn btn-secondary"
+              data-bs-toggle="button"
+              @click="toggleDrawMode">그리기
+      </button>
+      <br>
+      <!-- Default dropstart button -->
+      <div class="btn-group dropstart">
+        <button type="button"
+                class="btn btn-secondary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+          도형 추가
+        </button>
+        <ul class="dropdown-menu" >
+          <!-- Dropdown menu links -->
+          <li><a class="dropdown-item" @click="toggleMode('rect')">사각형</a></li>
+          <li><a class="dropdown-item" @click="toggleMode">원</a></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -53,6 +72,7 @@ export default {
       x:0,
       y:0,
       lineCap:'round',
+      fillColor:'#ffffff',
       //
       canvas: null,
       drawing: false,
@@ -69,10 +89,7 @@ export default {
       mouseX: 0,
       mouseY: 0,
       rect:{},
-      // 캔버스 모드 변수
-      drawMode:false,
-      rectMode:false,
-      arcMode: false,
+
       // 두 수의 차이
       xMinusX:0,
       yMinusY:0,
@@ -90,16 +107,16 @@ export default {
   },
   mounted() {
     this.initCanvas();
-    this.$store.watch(
-      (state) => state.events.length,
-      (newLength) => {
-        const event = this.events[newLength - 1];
-        if (event) {
-          this.handleIncomingDrawing(event);
-          console.log(event)
-        }
-      }
-    );
+    // this.$store.watch(
+    //   (state) => state.events.length,
+    //   (newLength) => {
+    //     const event = this.events[newLength - 1];
+    //     if (event) {
+    //       this.handleIncomingDrawing(event);
+    //       console.log(event)
+    //     }
+    //   }
+    // );
     // window.addEventListener("resize", this.resizeCanvas);
   },
   beforeUnmount() {
@@ -113,6 +130,7 @@ export default {
         width: 1920,
         height: 1080,
         backgroundColor: '#043e1a',
+
       });
       // 이벤트 리스너 추가
       this.canvas.on('mouse:down', this.handleMouseDown)
@@ -120,7 +138,7 @@ export default {
       this.canvas.on('mouse:up', this.handleMouseUp)
 
 
-      console.log("initCanvas", this.canvas);
+      console.log("initCanvas", this.canvas.evented);
 
     },
 
@@ -138,12 +156,17 @@ export default {
       this.canvas.color = this.color;
       console.log('색깔 : ', this.canvas.color);
     },
-
+    changeFillColor(e){
+      this.fillColor = e.target.value;
+      this.rect.color = this.fillColor;
+      console.log(this.rect.color)
+    },
     // brush 선택시 마우스다운 핸들러 들어갔을 때 수행하는 함수
     onBrush(event){
       // 포인터를 통해 현재 x,y 좌표 구하기.
       let brush = this.canvas.freeDrawingBrush;
       brush.width = parseInt(this.lineWidth) || 1
+
       this.canvas.isDrawingMode = true;
       const pointer = this.canvas.getPointer(event.e);
       this.x = pointer.x;
@@ -151,8 +174,6 @@ export default {
 
       this.canvas.freeDrawingBrush.width = this.lineWidth;
       this.canvas.color = this.color;
-
-
 
       console.log('x좌표 : ' ,this.x);
       console.log('y좌표 : ' ,this.y);
@@ -175,43 +196,46 @@ export default {
         event:false,
       });
       this.canvas.add(newLine);
+
       this.x = pointer.x;
       this.y = pointer.y;
       this.prevX = this.x;
       this.prevY = this.y;
       console.log("mouseMove : ", brush);
+
     },
     // 이벤트 핸들러 : handleMouseDown
     handleMouseDown(event) {
 
-      if(this.mode == ''){
-
-      } else if (this.mode == 'brush') {
-
-        this.onBrush(event)
-
-      } else if (this.mode == 'rect'){
-        // 사각형 모드시
-
-      } else if (this.mode == 'arc'){
-        // 원 모드시
+      // 드로잉 모드가 활성화 됐을 때는 모드가 brush 이고
+      // 드로잉 모드가 비활성화 됐을 때는 모드가 객체 선택 모드이다. 라는 로직으로 가야될듯?
+      // 객체 선택 모드
+      const selected = this.canvas.toObject().selectable;
+      if (selected){
+        this.selectRect(event)
       }
+      console.log("obj : ",selected)
+      this.onBrush(event)
+
+      // this.selectRect(event)
+
+     //  if (this.mode == 'rect') {
+     //   this.canvas.isDrawingMode = false;
+     //   this.mode = 'rect'
+     //   this.selectRect(event)
+     //
+     //   console.log("렉트 왔냐 ", this.mode)
+     // }
       console.log("현재 모드 : ",this.mode);
     },
     handleMouseMove(event){
-      if (this.canvas.isDrawingMode){
 
         // 드로잉 모드일 때
-        if (this.mode == 'brush') {
+        if ( this.canvas.isDrawingMode && this.mode == 'brush' ) {
           this.moveBrush(event)
+        } else if (this.mode == 'rect' ) {
 
-        } else if (this.rectMode){
-         // 사각형 모드일 때
-
-        } else if (this.arcMode) {
-          // 원 그리기 모드일 때
-
-        }
+          return
       }
       // 메시지 전송
       const message = JSON.stringify({
@@ -233,29 +257,71 @@ export default {
         });
       }
     },
+    selectRect(event){
+      // this.canvas.isDrawingMode = false;
+      this.mode = 'rect';
 
+      const selectRect = event.target;
+      console.log(selectRect)
+    },
+    // 사각형 도형 추가 버튼
+    addRect(){
+
+      const rect = new fabric.Rect({
+        // top: Math.random() * this.canvas.height,
+        // left: Math.random() * this.canvas.width,
+        top: 100,
+        left: 100,
+        width: 500,
+        height: 500,
+        fill: this.fillColor,
+        corner: 100,
+        angle: 360,
+        borderColor: "#3845ff",
+        cornerColor: "#ffc100",
+        cornerSize: 20,
+        transparentCorners: false,
+        evented: true,
+        event: true,
+          }
+      )
+
+      this.canvas.add(rect);
+      this.canvas.setActiveObject(rect);
+      this.canvas.renderAll();
+      console.log("rect", rect);
+    },
     // 그리기 스탑
-    handleMouseUp(event) {
+    handleMouseUp() {
       this.canvas.isDrawingMode = false;
+
+      console.log("stop")
     },
 
-    // 지우개 버튼
+    // 전체삭제 버튼
     buttonErase() {
-      this.context.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
+      this.canvas.clear();
     },
     // 그리기 버튼
     toggleDrawMode() {
       this.mode = 'brush';
+      this.drawing = true;
       // this.canvas.isDrawingMode = true;
-      console.log(this.mode)
+      console.log(this.drawing)
     },
-    toggleRectMode() {
-      this.drawMode = false;
-      this.rectMode = true;
+    toggleMode(mode) {
+      this.canvas.isDrawingMode = false;
+      if (mode == 'rect'){
+        this.mode = 'rect'
+        console.log(this.mode)
+        this.addRect()
+
+      } else if(this.mode == 'arc') {
+
+      }
     },
     clickObject(){
-      this.drawMode = false;
-      this.rectMode = false;
+      this.canvas.isDrawingMode = false;
     },
 
     // 메시지 수신 처리 함수
