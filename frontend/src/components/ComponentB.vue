@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Component B</h2>
-    <button @click="switchToComponentA">Switch to OXSelector</button>
+    <button @click="switchToComponentA">Switch to OXPicker</button>
   </div>
 </template>
 
@@ -10,7 +10,7 @@ export default {
   name: 'ComponentB',
   methods: {
     switchToComponentA() {
-      this.$emit('switchComponent', 'OXSelector');
+      this.$emit('switchComponent', 'OXPicker');
     }
   }
 };

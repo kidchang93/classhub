@@ -13,13 +13,15 @@
 </template>
 
 <script>
-import OXSelector from './OXSelector.vue';
+import OXPicker from './OXPicker.vue';
+import PickerBox from './PickerBox.vue';
 import ComponentB from './ComponentB.vue';
 
 export default {
   name: 'WidgetModal',
   components: {
-    OXSelector,
+    OXPicker,
+    PickerBox,
     ComponentB
   },
   props: {
@@ -34,7 +36,7 @@ export default {
   },
   data() {
     return {
-      currentComponent: 'OXSelector'
+      currentComponent: 'OXPicker'
     };
   },
   methods: {
