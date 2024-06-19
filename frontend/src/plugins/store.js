@@ -2,21 +2,21 @@ import { createStore } from 'vuex';
 import { Client } from "@stomp/stompjs";
 
 let stompClient = null;
-
-const createStompClient = (commit) => {
+// STOMP 클라이언트를 생성하는 함수
+const createStompClient = (commit) => { //commit 메서드를 인자로 받아 새로운 Client 객체를 반환
     return new Client({
         brokerURL: "ws://localhost:8080/whiteboard",
         debug: function (str) {
             console.log(str);
         },
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
+        reconnectDelay: 5000, //재연결 시도 간격(밀리초)입니다
+        heartbeatIncoming: 4000, //클라이언트와 서버 간의 heartbeat 간격(밀리초)입니다.
         heartbeatOutgoing: 4000,
-        onConnect: (frame) => {
+        onConnect: (frame) => { //연결이 성공했을 때 호출되는 콜백 함수입니다
             console.log('Connected: ' + frame);
             commit('setSocket', stompClient);
         },
-        onStompError: (frame) => {
+        onStompError: (frame) => { // STOMP 에러가 발생했을 때 호출되는 콜백 함수입니다.
             console.error('Broker reported error: ' + frame.headers['message']);
             console.error('Additional details: ' + frame.body);
         }
@@ -24,7 +24,7 @@ const createStompClient = (commit) => {
 };
 
 const store = createStore({
-    state() {
+    state() { //애플리케이션의 상태를 정의
         return {
             events: [],
             joins: [],
@@ -32,7 +32,7 @@ const store = createStore({
             socket: null,
         };
     },
-    mutations: {
+    mutations: { //상태를 변경하는 메서드
         addEvent(state, event) {
             state.events.push(event);
         },
@@ -46,9 +46,13 @@ const store = createStore({
             state.socket = socket;
         }
     },
-    actions: {
+    actions: { //비동기 작업을 수행하며, mutations를 커밋합니다.
         triggerEvent({ commit }, event) {
-            commit('addEvent', event);
+            /* commit은 vuex에서 지원하는 메소드. 
+            commit(type, payload): 
+            type은 mutations의 이름 문자열,
+            payload는 mutations에 전달할 추가데이터(객체, 배열, 숫자, 문자열 등 어떤 유형의 데이터든 전달) */
+            commit('addEvent', event); 
         },
         triggerJoin({ commit }, join) {
             commit('addJoin', join);
@@ -65,7 +69,9 @@ const store = createStore({
                 stompClient = createStompClient(commit);
                 stompClient.onConnect = () => {
                     console.log('Connected');
-                    commit('setSocket', stompClient);
+                    /*비동기 작업 중 상태 변경이 필요할 때 commit을 통해 
+                    setSocket mutation을 호출하여 상태를 변경합니다.*/
+                    commit('setSocket', stompClient); 
                     resolve();
                 };
 
