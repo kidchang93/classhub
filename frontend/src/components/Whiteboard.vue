@@ -209,12 +209,9 @@ export default {
 
       // 드로잉 모드가 활성화 됐을 때는 모드가 brush 이고
       // 드로잉 모드가 비활성화 됐을 때는 모드가 객체 선택 모드이다. 라는 로직으로 가야될듯?
-      // 객체 선택 모드
-      const selected = this.canvas.toObject().selectable;
-      if (selected){
-        this.selectRect(event)
-      }
-      console.log("obj : ",selected)
+
+
+
       this.onBrush(event)
 
       // this.selectRect(event)
