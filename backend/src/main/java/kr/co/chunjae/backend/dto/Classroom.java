@@ -7,6 +7,7 @@ import lombok.ToString;
 @ToString
 public class Classroom {
     private int id;
+    private String classroomName;
     private String code;
     private int teacherId;
 }

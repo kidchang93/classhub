@@ -2,7 +2,7 @@
   <div class="container">
     <div class="question-container">
       <label for="question"><h2>Q.</h2></label>
-      <input type="text" id="question" v-model="question" placeholder="질문을 입력하세요" />
+      <input type="text" id="question" v-model="question" placeholder="원하시는 경우, 질문을 입력하세요(선택)" />
     </div>
 
     <div class="choice-container">
@@ -15,17 +15,19 @@
     </div>
 
     <div class="action-container">
-      <button @click="startSelection" class="action-button start-button">시작하기</button>
       <button @click="saveSelection" class="action-button">저장하기</button>
+      <button @click="startSelection" class="action-button start-button">시작하기</button>
     </div>
 
-    <button class="store-button">보관함</button>
+    <button class="store-button" @click="this.$emit('switchComponent', 'PickerBox')">보관함</button>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: 'OXSelector',
+  name: 'OXPicker',
   data() {
     return {
       question: '',
@@ -46,7 +48,25 @@ export default {
     },
     saveSelection() {
       // Implement the logic for saving the selection
-      alert(`Saved: Question: ${this.question}, Choice: ${this.choice}`);
+      const payload = {
+        question: this.question,
+        choices: [],
+        type: 0,
+        classroomId: 1
+      };
+
+      axios.post('http://localhost:8080/api/picker/save', payload)
+        .then(response => {
+          if (response.status === 201) {
+            alert(`Saved: Question: ${this.question}`);
+          } else {
+            alert('Failed to save the question');
+          }
+        })
+        .catch(error => {
+          alert('Error saving the question');
+        });
+
     }
   }
 };
