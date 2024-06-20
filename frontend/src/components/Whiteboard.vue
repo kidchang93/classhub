@@ -140,22 +140,25 @@ export default {
     handleMouseDown(e) {
       if (this.drawing) {
         this.canvas.isDrawingMode = true;
-        this.canvas.freeDrawingBrush.color = this.color;
-        this.canvas.freeDrawingBrush.width = this.lineWidth;
+        // this.canvas.freeDrawingBrush.color = this.color;
+        // this.canvas.freeDrawingBrush.width = this.lineWidth;
         this.isMouseDown = true;
       }
     },
     handleMouseMove(e) {
       if (this.drawing && this.isMouseDown) {
-        this.canvas.freeDrawingBrush.color = this.color;
-        this.canvas.freeDrawingBrush.width = this.lineWidth;
-        this.canvas.renderAll();
+        // this.canvas.freeDrawingBrush.color = this.color;
+        // this.canvas.freeDrawingBrush.width = this.lineWidth;
+
+        console.log("마우스 무브")
       }
+
     },
     handleMouseUp(e) {
 
       this.drawing = false;
-      this.isMouseDown = false;
+      this.isMouseDown = true;
+      this.canvas.renderAll();
       console.log("마우스 업")
     },
 
