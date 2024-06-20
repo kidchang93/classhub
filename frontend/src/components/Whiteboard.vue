@@ -1,5 +1,5 @@
 <template>
-  <div id="whiteboard">
+
 <!--    <canvas class="fabric"-->
 <!--        ref="canvas"-->
 <!--        @mousedown="handleMouseDown"-->
@@ -10,6 +10,8 @@
 
     <div id="designTool">
       <button type="button" class="btn btn-secondary" @click="buttonErase">모두 지우기</button>
+      <br>
+      <button type="button" class="btn btn-secondary" @click="eraser">지우개</button>
       <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
@@ -51,7 +53,6 @@
               @click="clickObject">객체 선택
       </button>
     </div>
-  </div>
 
 </template>
 
@@ -80,6 +81,9 @@ export default {
       y:0,
       lineCap:'round',
       fillColor:'#ffffff',
+      rect:{},
+      triangle:{},
+      circle:{},
       //
       drawing: false,
       prevX: 0,
@@ -105,16 +109,17 @@ export default {
   },
   mounted() {
     this.initCanvas();
-    // this.$store.watch(
-    //   (state) => state.events.length,
-    //   (newLength) => {
-    //     const event = this.events[newLength - 1];
-    //     if (event) {
-    //       this.handleIncomingDrawing(event);
-    //       console.log(event)
-    //     }
-    //   }
-    // );
+    // this.canvas.renderAll();
+    this.$store.watch(
+      (state) => state.events.length,
+      (newLength) => {
+        const event = this.events[newLength - 1];
+        if (event) {
+          this.handleIncomingDrawing(event);
+          console.log(event)
+        }
+      }
+    );
     // window.addEventListener("resize", this.resizeCanvas);
   },
   beforeUnmount() {
@@ -132,17 +137,31 @@ export default {
       });
       // 이벤트 리스너 추가
       this.canvas.on('mouse:down',(e) => {
+        // 마우스 다운 이벤트이고
+        // 만약 드로잉이 true 값이라면 실행
         if (this.drawing == true){
           this.canvas.isDrawingMode = true;
           this.onBrush(e)
+          // console.log("true?")
+          // 그러면서 움직였다?
+          this.canvas.on('mouse:move',(e)=> {
+            if (this.canvas.isDrawingMode == true && this.drawing == true) {
+              this.moveBrush(e)
+              // 이건 밑에다 짜야되는거같긴한데
+              // 움직였지만? 드로잉이 아닌 상태라면 마우스무브 이벤트 끔
+            } else if (this.canvas.isDrawingMode == false && this.drawing == false){
+                  this.canvas.off('mouse:move');
+                  // console.log("설마 여길 들어오냐")
+                  // console.log(this.drawing);
+                }
+          })
+          // 드로잉이 아니라면? 객체를 움직이는거니까
+          // 객체 움직임에 대한 이벤트 전달.
         } else if (this.drawing == false) {
-          this.canvas.isDrawingMode = false;
-        }
-      })
-      this.canvas.on('mouse:move',(e)=>{
-        if (this.canvas.isDrawingMode == true && this.drawing == true){
-          this.moveBrush(e)
-        } else if (this.canvas.isDrawingMode == false && this.drawing == false){
+          this.canvas.on('object:modified', (e) => {
+            this.canvas.isDrawingMode = false;
+            this.selectObject(e)
+          })
 
         }
       })
@@ -151,15 +170,15 @@ export default {
         this.handleMouseUp(e)
       })
 
-      this.canvas.on('object:selected', (e) => {
-        this.selectObject(e)
-      })
-
       console.log("initCanvas", this.canvas.event);
 
     },
 
+    eraser(){
+      this.drawing = false;
 
+      console.log("지우개 모드 맞음? : ",this.canvas.freeDrawingBrush);
+    },
     // 선 굵기 변경
     changeLineWidth(e) {
       this.lineWidth = e.target.value;
@@ -215,11 +234,12 @@ export default {
       });
       this.canvas.add(newLine);
 
-      this.x = pointer.x;
-      this.y = pointer.y;
       this.prevX = this.x;
       this.prevY = this.y;
-      console.log("mouseMove : ", brush);
+      this.x = pointer.x;
+      this.y = pointer.y;
+
+      console.log(`prevXY : ${this.prevX},${this.prevX} || ${this.x}, ${this.y}`);
 
       // 메세지에 newLine 객체 담아서 보내기
       this.sendMessage(newLine);
@@ -228,7 +248,7 @@ export default {
 
     sendMessage(event){
       console.log("sendMessage : ",event)
-      // 메시지 전송
+      // Drawing 메시지 전송
       const message = JSON.stringify({
         type: "DRAW",
         sender: this.sender,
@@ -238,7 +258,11 @@ export default {
           prevX : this.prevX,
           prevY : this.prevY,
           color: this.color,
+          fillColor: this.fillColor,
           lineWidth: this.lineWidth,
+          rect: this.rect,
+          triangle: this.triangle,
+          circle: this.circle,
         },
       });
       if (this.socket && this.socket.connected) {
@@ -270,10 +294,11 @@ export default {
         evented: true,
         }
       )
-
+      this.rect = rect;
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
+      this.sendMessage(rect);
       this.canvas.on('object:added')
       console.log("rect", rect);
       console.log("도형 추가")
@@ -295,6 +320,7 @@ export default {
         objectCaching: true,
 
       })
+      this.circle = circle;
       this.canvas.add(circle);
       this.canvas.setActiveObject(circle);
       this.canvas.renderAll();
@@ -318,6 +344,7 @@ export default {
         selectable: true,
         evented: true,
       })
+      this.triangle = triangle;
       this.canvas.add(triangle);
       this.canvas.setActiveObject(triangle);
       this.canvas.renderAll();
@@ -328,11 +355,11 @@ export default {
     // 객체 선택
     selectObject(e){
 
-      const forChangeColor = this.canvas.getActiveObject();
+      const selectObject = this.canvas.getActiveObject();
 
-      console.log("selectObject : ",forChangeColor);
+      console.log("selectObject : ",selectObject);
       this.canvas.renderAll();
-
+      this.sendMessage(selectObject);
     },
     // 그리기 스탑
     handleMouseUp(e) {
@@ -351,6 +378,7 @@ export default {
     // 전체삭제 버튼
     buttonErase() {
       this.canvas.clear();
+      this.canvas.renderAll();
     },
     // 그리기 버튼
     toggleDrawMode() {
@@ -391,8 +419,8 @@ export default {
     handleIncomingDrawing(message) {
       const { type, data } = message;
       if (type === "DRAW") {
-        const { x, y, prevX, prevY, color, lineWidth } = data;
-        console.log(`보낸 메세지 (${prevX}, ${prevY}) to (${x}, ${y}) & (${color}) & (${lineWidth})`);
+        const { x, y, prevX, prevY, color, fillColor, lineWidth, rect, triangle, circle  } = data;
+        console.log(`보낸 메세지: ` , data);
       }
     },
   },
@@ -402,13 +430,14 @@ export default {
 <style scoped>
 #whiteboard {
   position: relative;
-  background: #043e1a;
+  /*background: #043e1a;*/
 }
 .fabric {
   height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #2c4332;
 }
 canvas {
   display: block;
