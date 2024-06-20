@@ -75,7 +75,7 @@ export default {
 
       // fabric
       mode:'',
-      brush:'',
+      // brush:'',
       x:0,
       y:0,
       lineCap:'round',
@@ -89,8 +89,6 @@ export default {
       drawing: false,
 
       // 화면 속성 변수
-      width: 1920,
-      height: 1080,
 
       // 속성 변수
       lineWidth: 10,
@@ -120,8 +118,8 @@ export default {
     initCanvas() {
 
       this.canvas = new fabric.Canvas(this.$refs.canvas, {
-        width: this.width,
-        height: this.height,
+        width: 1920,
+        height: 1080,
         backgroundColor: '#2c4332',
         isDrawingMode: false,
 
