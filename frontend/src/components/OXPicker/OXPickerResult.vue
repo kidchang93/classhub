@@ -34,7 +34,8 @@
     </div>
 
     <div class="action-container">
-      <button @click="endPicker" class="action-button end-button">종료</button>
+      <button @click="this.$emit('switchComponent', 'OXPicker')" class="action-button">질문 생성으로 돌아가기</button>
+      <button @click="endResult" class="action-button end-button">종료</button>
     </div>
 
   </div>
@@ -98,21 +99,10 @@ export default {
       }
 
     },
-    endPicker() {
-      alert('Selection ended!');
-      const message = JSON.stringify({
-        type: "PICKER/END",
-        sender: this.sender,
-        data: {
-          question: this.question,
-        },
-      });
-      if (this.socket && this.socket.connected) {
-        this.socket.publish({
-          destination: `/pub/picker/end/${this.classCode}`,
-          body: message,
-        });
-      }
+    endResult() {
+      this.$emit('toggleWidgetModal')
+      this.$emit('endPicker');
+      this.$emit('switchComponent', 'OXPicker')
     }
   }
 };

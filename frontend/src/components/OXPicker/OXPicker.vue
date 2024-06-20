@@ -20,10 +20,9 @@
 
     <div class="action-container">
       <button @click="savePicker" class="action-button">저장하기</button>
-      <button @click="startPicker" class="action-button start-button">시작하기</button>
+      <button @click="this.$emit('startPicker', this.question)" class="action-button start-button">시작하기</button>
     </div>
 
-    <button @click="this.$emit('switchComponent', 'OXPickerSelect');">임시 학생화면</button>
     <button class="store-button" @click="this.$emit('switchComponent', 'PickerBox')">보관함</button>
   </div>
 </template>
@@ -55,26 +54,6 @@ export default {
   methods: {
     selectChoice(choice) {
       this.choice = choice;
-    },
-    startPicker() {
-      // Implement the logic for starting selection
-      alert('Selection started!');
-      // this.switchToComponentB();
-      // 메시지 전송
-      const message = JSON.stringify({
-        type: "PICKER/START",
-        sender: this.sender,
-        data: {
-          question: this.question,
-        },
-      });
-      if (this.socket && this.socket.connected) {
-        this.socket.publish({
-          destination: `/pub/picker/start/${this.classCode}`,
-          body: message,
-        });
-      }
-      this.$emit('switchComponent', 'OXPickerResult')
     },
     savePicker() {
       // Implement the logic for saving the selection

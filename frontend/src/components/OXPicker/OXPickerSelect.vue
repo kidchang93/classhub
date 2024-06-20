@@ -2,7 +2,7 @@
   <div class="container">
     <div class="question-container">
       <label for="question"><h2>Q.</h2></label>
-      <input type="text" id="question" v-model="question" readonly/>
+      <p id="question">{{ message.data.question }}</p>
     </div>
 
     <div class="choice-container">
@@ -36,10 +36,12 @@ export default {
       type: String,
       required: true,
     },
+    message: {
+      type: Object,
+    },
   },
   data() {
     return {
-      question: '',
       choice: ''
     };
   },
@@ -59,7 +61,6 @@ export default {
         type: "PICKER/SELECT",
         sender: this.sender,
         data: {
-          question: this.question,
           choice: this.choice,
         },
       });
@@ -70,28 +71,6 @@ export default {
         });
       }
     },
-    savePicker() {
-      // Implement the logic for saving the selection
-      const payload = {
-        question: this.question,
-        choices: [],
-        type: 0,
-        classroomId: 1
-      };
-
-      axios.post('http://localhost:8080/api/picker/save', payload)
-        .then(response => {
-          if (response.status === 201) {
-            alert(`Saved: Question: ${this.question}`);
-          } else {
-            alert('Failed to save the question');
-          }
-        })
-        .catch(error => {
-          alert('Error saving the question');
-        });
-
-    }
   }
 };
 </script>

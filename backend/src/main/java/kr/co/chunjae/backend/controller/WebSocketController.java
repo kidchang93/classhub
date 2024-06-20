@@ -2,14 +2,12 @@ package kr.co.chunjae.backend.controller;
 
 
 import kr.co.chunjae.backend.dto.Message;
-import kr.co.chunjae.backend.service.ClassroomService;
 import kr.co.chunjae.backend.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -40,6 +38,11 @@ public class WebSocketController {
     @MessageMapping("/picker/start/{classCode}")
     public void pickerStart(@DestinationVariable(value = "classCode") String classCode, Message message) {
         webSocketService.pickerStart(classCode, message);
+    }
+
+    @MessageMapping("/picker/end/{classCode}")
+    public void pickerEnd(@DestinationVariable(value = "classCode") String classCode, Message message) {
+        webSocketService.pickerEnd(classCode, message);
     }
 
     @MessageMapping("/picker/select/{classCode}")

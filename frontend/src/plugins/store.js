@@ -30,6 +30,7 @@ const store = createStore({
             joins: [],
             leaves: [],
             pickerStarts: [],
+            pickerEnds: [],
             pickerSelects: [],
             socket: null,
         };
@@ -46,6 +47,9 @@ const store = createStore({
         },
         addPickerStart(state, pickerStart) {
             state.pickerStarts.push(pickerStart);
+        },
+        addPickerEnd(state, pickerEnd) {
+            state.pickerEnds.push(pickerEnd);
         },
         addPickerSelect(state, pickerSelect) {
             state.pickerSelects.push(pickerSelect);
@@ -71,10 +75,13 @@ const store = createStore({
         triggerPickerStart({ commit }, pickerStart) {
             commit('addPickerStart', pickerStart);
         },
+        triggerPickerEnd({ commit }, pickerStart) {
+            commit('addPickerStart', pickerStart);
+        },
         triggerPickerSelect({ commit }, pickerSelect) {
             commit('addPickerSelect', pickerSelect);
         },
-        initializeWebSocket({ commit }, classCode) {
+        initializeWebSocket({ commit }) {
             return new Promise((resolve, reject) => {
                 if (stompClient && stompClient.connected) {
                     stompClient.deactivate();
@@ -114,6 +121,10 @@ const store = createStore({
                     stompClient.subscribe(`/sub/class/${classCode}/picker/start`, (message) => {
                         console.log('Received picker start message: ', message.body);
                         dispatch('triggerPickerStart', JSON.parse(message.body));
+                    });
+                    stompClient.subscribe(`/sub/class/${classCode}/picker/end`, (message) => {
+                        console.log('Received picker end message: ', message.body);
+                        dispatch('triggerPickerEnd', JSON.parse(message.body));
                     });
                 } else if (userType === 'teacher') {
                     stompClient.subscribe(`/sub/class/${classCode}/picker/select`, (message) => {

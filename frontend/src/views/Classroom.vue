@@ -62,7 +62,7 @@
 
   <DimModal :modalData="modalData"/>
   <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
-  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2" :classCode="classCode" :sender="sender"/>
+  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @toggleWidgetModal="toggleWidgetModal2" :classCode="classCode" :sender="sender"/>
 
   <button @click="toggleWidgetModal1">위젯</button>
   <button @click="toggleWidgetModal2">위젯</button>
@@ -120,8 +120,6 @@ export default {
         this.handleStudentListJoin(mutation.payload);
       } else if (mutation.type === "addLeave") {
         this.handleStudentListLeave(mutation.payload);
-      } else if (mutation.type === "addPickerStart" && this.userType === 'teacher') {
-        this.handlePickerStart(mutation.payload);
       }
     });
     window.addEventListener("beforeunload", this.unLoadEvent);
@@ -166,10 +164,6 @@ export default {
         console.error(error);
       }
     },
-    handlePickerStart(message) {
-      // Handle picker start event for students
-      console.log("Picker start event received:", message);
-    },
     toggleStudentList() {
       this.isStudentListOpen = !this.isStudentListOpen;
     },
@@ -181,7 +175,7 @@ export default {
       this.isWidgetModalOpen1 = !this.isWidgetModalOpen1;
     },
     toggleWidgetModal2() {
-      this.isWidgetModalOpen2 = !this.isWidgetModalOpen2;
+        this.isWidgetModalOpen2 = !this.isWidgetModalOpen2;
     },
 
   },

@@ -7,9 +7,6 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -44,5 +41,9 @@ public class WebSocketService {
                              SimpMessageHeaderAccessor headerAccessor) {
         message.setSessionId(headerAccessor.getSessionId());
         template.convertAndSend("/sub/class/" + classCode + "/picker/select", message);
+    }
+
+    public void pickerEnd(String classCode, Message message) {
+        template.convertAndSend("/sub/class/" + classCode + "/picker/end", message);
     }
 }
