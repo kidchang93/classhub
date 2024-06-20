@@ -31,6 +31,12 @@
               @click="toggleDrawMode">그리기
       </button>
       <br>
+      <button type="button"
+              class="btn btn-secondary"
+              data-bs-toggle="button"
+              @click="test">테스트
+      </button>
+      <br>
       <!-- Default dropstart button -->
       <div class="btn-group dropstart">
         <button type="button"
@@ -84,6 +90,7 @@ export default {
       rect:{},
       triangle:{},
       circle:{},
+      message:{},
       //
       drawing: false,
       prevX: 0,
@@ -116,7 +123,7 @@ export default {
         const event = this.events[newLength - 1];
         if (event) {
           this.handleIncomingDrawing(event);
-          console.log(event)
+          console.log("watch 실행 : " ,event)
         }
       }
     );
@@ -162,7 +169,6 @@ export default {
             this.canvas.isDrawingMode = false;
             this.selectObject(e)
           })
-
         }
       })
 
@@ -170,10 +176,16 @@ export default {
         this.handleMouseUp(e)
       })
 
+
       console.log("initCanvas", this.canvas.event);
 
     },
-
+    test(){
+      // rect에 집어넣은 변수값으로 생성된다. ㅅㅂ
+      const newRect = new fabric.Rect(this.rect);
+      this.canvas.add(newRect);
+      console.log(newRect)
+    },
     eraser(){
       this.drawing = false;
 
@@ -203,9 +215,9 @@ export default {
       // 포인터를 통해 현재 x,y 좌표 구하기.
       let brush = this.canvas.freeDrawingBrush;
       brush.width = parseInt(this.lineWidth) || 1
-
-      this.canvas.isDrawingMode = true;
       const pointer = this.canvas.getPointer(event.e);
+      this.canvas.isDrawingMode = true;
+
       this.x = pointer.x;
       this.y = pointer.y;
 
@@ -242,33 +254,49 @@ export default {
       console.log(`prevXY : ${this.prevX},${this.prevX} || ${this.x}, ${this.y}`);
 
       // 메세지에 newLine 객체 담아서 보내기
-      this.sendMessage(newLine);
+      this.sendMessage("DRAW",newLine);
     },
     // 기존 이벤트 핸들러 제거 => initial 함수에서 조건에 맞는 함수로 event 보내기
 
-    sendMessage(event){
+    sendMessage(type, event){
       console.log("sendMessage : ",event)
       // Drawing 메시지 전송
-      const message = JSON.stringify({
-        type: "DRAW",
-        sender: this.sender,
-        data: {
-          x: this.x,
-          y: this.y,
-          prevX : this.prevX,
-          prevY : this.prevY,
-          color: this.color,
-          fillColor: this.fillColor,
-          lineWidth: this.lineWidth,
-          rect: this.rect,
-          triangle: this.triangle,
-          circle: this.circle,
-        },
-      });
+      if (type == 'DRAW'){
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          data: {
+            x: this.x,
+            y: this.y,
+            prevX : this.prevX,
+            prevY : this.prevY,
+            color: this.color,
+            lineWidth: this.lineWidth,
+          },
+        });
+      } else if (type == 'rect'){
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          data: {
+            x: this.x,
+            y: this.y,
+            prevX : this.prevX,
+            prevY : this.prevY,
+            color: this.color,
+            lineWidth: this.lineWidth,
+          },
+        });
+      } else if (type == 'circle'){
+
+      } else if (type == 'triangle'){
+
+      }
+
       if (this.socket && this.socket.connected) {
         this.socket.publish({
           destination: `/pub/update/${this.classCode}`,
-          body: message,
+          body: this.message,
         });
       }
       console.log("메세지 전송 : ", message)
@@ -298,7 +326,7 @@ export default {
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
-      this.sendMessage(rect);
+      this.sendMessage("rect",rect);
       this.canvas.on('object:added')
       console.log("rect", rect);
       console.log("도형 추가")
@@ -324,6 +352,7 @@ export default {
       this.canvas.add(circle);
       this.canvas.setActiveObject(circle);
       this.canvas.renderAll();
+      this.sendMessage("circle",circle);
       this.canvas.on('object:added')
       console.log("circle", circle);
       console.log("도형 추가")
@@ -348,6 +377,7 @@ export default {
       this.canvas.add(triangle);
       this.canvas.setActiveObject(triangle);
       this.canvas.renderAll();
+      this.sendMessage("triangle",triangle);
       this.canvas.on('object:added')
       console.log("triangle", triangle);
       console.log("도형 추가")
@@ -419,8 +449,12 @@ export default {
     handleIncomingDrawing(message) {
       const { type, data } = message;
       if (type === "DRAW") {
-        const { x, y, prevX, prevY, color, fillColor, lineWidth, rect, triangle, circle  } = data;
-        console.log(`보낸 메세지: ` , data);
+        // const { x, y, prevX, prevY, color, fillColor, lineWidth, rect, triangle, circle } = data;
+        const { x, y, prevX, prevY, color, lineWidth } = data;
+        const rcvDraw = new fabric.Line(data);
+        this.canvas.add(rcvDraw);
+        // console.log(`보낸 메세지: , x: ${x} y: ${y} prevX: ${prevX}, prevY: ${prevY}, color: ${color}, fillColor: ${fillColor}, lineWidth:${lineWidth}, rect: ${rect}, triangle: ${triangle}, circle: ${circle}` , data);
+
       }
     },
   },
