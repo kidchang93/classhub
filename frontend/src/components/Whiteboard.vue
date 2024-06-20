@@ -13,7 +13,7 @@
       <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
-      <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @change="changLineWidth"><br>
+      <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @change="changeLineWidth"><br>
 
       <label for="drawing-color">그리기 색 : </label>
       <span class="info">{{ color }}</span>
@@ -39,8 +39,9 @@
         </button>
         <ul class="dropdown-menu" >
           <!-- Dropdown menu links -->
-          <li><a class="dropdown-item" @click="toggleMode('rect')">사각형</a></li>
-          <li><a class="dropdown-item" @click="toggleMode">원</a></li>
+          <li><a class="dropdown-item" @click="toggleMode('rect')">정사각형</a></li>
+          <li><a class="dropdown-item" @click="toggleMode('triangle')">정삼각형</a></li>
+          <li><a class="dropdown-item" @click="toggleMode('circle')">원</a></li>
         </ul>
       </div>
       <br>
@@ -80,22 +81,14 @@ export default {
       lineCap:'round',
       fillColor:'#ffffff',
       //
-      canvas: null,
       drawing: false,
-      context: null,
       prevX: 0,
       prevY: 0,
       lastX: 0,
       lastY: 0,
-      scaleFactorX: 1,
-      scaleFactorY: 1,
       // 화면 속성 변수
       width: 1850,
       height: 837,
-      mouseX: 0,
-      mouseY: 0,
-      rect:{},
-
       // 두 수의 차이
       xMinusX:0,
       yMinusY:0,
@@ -104,8 +97,7 @@ export default {
       lineWidth: 10,
       color: '#ffffff',
       // 사각형 변수
-      rectStartX: 0,
-      rectStartY: 0,
+
     };
   },
   computed: {
@@ -135,7 +127,7 @@ export default {
       this.canvas = new fabric.Canvas(this.$refs.canvas, {
         width: 1920,
         height: 1080,
-        backgroundColor: '#043e1a',
+        backgroundColor: '#2c4332',
 
       });
       // 이벤트 리스너 추가
@@ -145,7 +137,6 @@ export default {
           this.onBrush(e)
         } else if (this.drawing == false) {
           this.canvas.isDrawingMode = false;
-          this.selectRect(e)
         }
       })
       this.canvas.on('mouse:move',(e)=>{
@@ -160,6 +151,9 @@ export default {
         this.handleMouseUp(e)
       })
 
+      this.canvas.on('object:selected', (e) => {
+        this.selectObject(e)
+      })
 
       console.log("initCanvas", this.canvas.event);
 
@@ -167,7 +161,7 @@ export default {
 
 
     // 선 굵기 변경
-    changLineWidth(e) {
+    changeLineWidth(e) {
       this.lineWidth = e.target.value;
       this.canvas.freeDrawingBrush.width = this.lineWidth;
       console.log("선 굵기 : ",this.canvas.freeDrawingBrush.width);
@@ -181,8 +175,9 @@ export default {
     },
     changeFillColor(e){
       this.fillColor = e.target.value;
-      this.rect.color = this.fillColor;
-      console.log(this.rect.color)
+
+      // this.rect.color = this.fillColor;
+      // console.log(this.rect.color)
     },
     // brush 선택시 마우스다운 핸들러 들어갔을 때 수행하는 함수
     onBrush(event){
@@ -254,17 +249,7 @@ export default {
       }
       console.log("메세지 전송 : ", message)
     },
-    // 사각형 객체 선택시
-    selectRect(event){
-      // this.canvas.isDrawingMode = false;
-      this.drawing = false;
-      this.mode = 'rect';
 
-      const selectRect = event.target;
-      if (selectRect == this.canvas.isActive)
-      this.canvas.renderAll();
-      console.log("selectRect : ",this.canvas.isActive)
-    },
     // 사각형 도형 추가 버튼
     addRect(){
 
@@ -273,25 +258,81 @@ export default {
         // left: Math.random() * this.canvas.width,
         top: 100,
         left: 100,
-        width: 500,
-        height: 500,
+        width: 300,
+        height: 300,
         fill: this.fillColor,
-        corner: 100,
-        angle: 360,
-        borderColor: "#3845ff",
-        cornerColor: "#ffc100",
-        cornerSize: 20,
+        borderColor: "#98bed8",
+        cornerColor: "#98bed8",
+        cornerSize: 15,
         transparentCorners: false,
+        hasControls: true,
+        selectable: true,
         evented: true,
-        event: true,
         }
       )
 
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
-
+      this.canvas.on('object:added')
       console.log("rect", rect);
+      console.log("도형 추가")
+    },
+
+    addCircle(){
+      const circle = new fabric.Circle({
+        top: 300,
+        left: 300,
+        radius: 100,
+        fill: this.fillColor,
+        borderColor: "#98bed8",
+        cornerColor: "#98bed8",
+        cornerSize: 15,
+        transparentCorners: false,
+        hasControls: true,
+        selectable: true,
+        evented: true,
+        objectCaching: true,
+
+      })
+      this.canvas.add(circle);
+      this.canvas.setActiveObject(circle);
+      this.canvas.renderAll();
+      this.canvas.on('object:added')
+      console.log("circle", circle);
+      console.log("도형 추가")
+    },
+
+    addTriangle(){
+      const triangle = new fabric.Triangle({
+        top: 100,
+        left: 100,
+        width: 300,
+        height: 300,
+        fill: this.fillColor,
+        borderColor: "#98bed8",
+        cornerColor: "#98bed8",
+        cornerSize: 15,
+        transparentCorners: false,
+        hasControls: true,
+        selectable: true,
+        evented: true,
+      })
+      this.canvas.add(triangle);
+      this.canvas.setActiveObject(triangle);
+      this.canvas.renderAll();
+      this.canvas.on('object:added')
+      console.log("triangle", triangle);
+      console.log("도형 추가")
+    },
+    // 객체 선택
+    selectObject(e){
+
+      const forChangeColor = this.canvas.getActiveObject();
+
+      console.log("selectObject : ",forChangeColor);
+      this.canvas.renderAll();
+
     },
     // 그리기 스탑
     handleMouseUp(e) {
@@ -327,8 +368,18 @@ export default {
         console.log(this.mode)
         this.addRect()
 
-      } else if(this.mode == 'arc') {
-
+      } else if(mode == 'circle') {
+        this.canvas.isDrawingMode = false;
+        this.drawing = false;
+        this.mode = 'circle'
+        console.log(this.mode)
+        this.addCircle()
+      } else if(mode == 'triangle'){
+        this.canvas.isDrawingMode = false;
+        this.drawing = false;
+        this.mode = 'circle'
+        console.log(this.mode)
+        this.addTriangle()
       }
     },
     clickObject(){
