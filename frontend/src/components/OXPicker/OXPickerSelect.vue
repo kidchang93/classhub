@@ -2,7 +2,7 @@
   <div class="container">
     <div class="question-container">
       <label for="question"><h2>Q.</h2></label>
-      <input type="text" id="question" v-model="question" placeholder="원하시는 경우, 질문을 입력하세요(선택)" />
+      <input type="text" id="question" v-model="question" readonly/>
     </div>
 
     <div class="choice-container">
@@ -15,38 +15,62 @@
     </div>
 
     <div class="action-container">
-      <button @click="saveSelection" class="action-button">저장하기</button>
-      <button @click="startSelection" class="action-button start-button">시작하기</button>
+      <button @click="pickerSelect" class="action-button start-button">제출하기</button>
     </div>
 
-    <button class="store-button" @click="this.$emit('switchComponent', 'PickerBox')">보관함</button>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+import {mapState} from "vuex";
 
 export default {
-  name: 'OXPicker',
+  name: 'OXPickerSelect',
+  props: {
+    classCode: {
+      type: String,
+      required: true,
+    },
+    sender: {
+      type: String,
+      required: true,
+    },
+  },
   data() {
     return {
       question: '',
       choice: ''
     };
   },
+  computed: {
+    ...mapState(["socket"]),
+  },
   methods: {
-    switchToComponentB() {
-      this.$emit('switchComponent', 'ComponentB');
-    },
     selectChoice(choice) {
       this.choice = choice;
     },
-    startSelection() {
+    pickerSelect() {
       // Implement the logic for starting selection
-      alert('Selection started!');
-      this.switchToComponentB();
+      alert('Selection submit!');
+      // this.switchToComponentB();
+      // 메시지 전송
+      const message = JSON.stringify({
+        type: "PICKER/SELECT",
+        sender: this.sender,
+        data: {
+          question: this.question,
+          choice: this.choice,
+        },
+      });
+      if (this.socket && this.socket.connected) {
+        this.socket.publish({
+          destination: `/pub/picker/select/${this.classCode}`,
+          body: message,
+        });
+      }
     },
-    saveSelection() {
+    savePicker() {
       // Implement the logic for saving the selection
       const payload = {
         question: this.question,
@@ -156,7 +180,7 @@ export default {
 
 .action-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   width: 400px;
   margin-top: 60px;
   margin-bottom: 30px;

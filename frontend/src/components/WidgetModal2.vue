@@ -6,22 +6,28 @@
         <button class="close-button" @click="closeModal">X</button>
       </div>
       <div class="modal-body">
-        <component :is="currentComponent" @switchComponent="switchComponent" />
+        <component :is="currentComponent" @switchComponent="switchComponent" :classCode="classCode" :sender="sender"/>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import OXPicker from './OXPicker.vue';
-import PickerBox from './PickerBox.vue';
+import OXPicker from './OXPicker/OXPicker.vue';
+import PickerBox from './OXPicker/PickerBox.vue';
 import ComponentB from './ComponentB.vue';
+import Whiteboard from "./Whiteboard.vue";
+import OXPickerSelect from "./OXPicker/OXPickerSelect.vue";
+import OXPickerResult from "./OXPicker/OXPickerResult.vue";
 
 export default {
-  name: 'WidgetModal',
+  name: 'WidgetModal2',
   components: {
+    Whiteboard,
     OXPicker,
     PickerBox,
+    OXPickerSelect,
+    OXPickerResult,
     ComponentB
   },
   props: {
@@ -32,7 +38,15 @@ export default {
     title: {
       type: String,
       default: 'Modal Title2'
-    }
+    },
+    classCode: {
+      type: String,
+      required: true,
+    },
+    sender: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {

@@ -29,6 +29,8 @@ const store = createStore({
             events: [],
             joins: [],
             leaves: [],
+            pickerStarts: [],
+            pickerSelects: [],
             socket: null,
         };
     },
@@ -41,6 +43,12 @@ const store = createStore({
         },
         addLeave(state, leave) {
             state.leaves.push(leave);
+        },
+        addPickerStart(state, pickerStart) {
+            state.pickerStarts.push(pickerStart);
+        },
+        addPickerSelect(state, pickerSelect) {
+            state.pickerSelects.push(pickerSelect);
         },
         setSocket(state, socket) {
             state.socket = socket;
@@ -59,6 +67,12 @@ const store = createStore({
         },
         triggerLeave({ commit }, leave) {
             commit('addLeave', leave);
+        },
+        triggerPickerStart({ commit }, pickerStart) {
+            commit('addPickerStart', pickerStart);
+        },
+        triggerPickerSelect({ commit }, pickerSelect) {
+            commit('addPickerSelect', pickerSelect);
         },
         initializeWebSocket({ commit }, classCode) {
             return new Promise((resolve, reject) => {
@@ -82,7 +96,7 @@ const store = createStore({
                 stompClient.activate();
             });
         },
-        subscribeToClass({ dispatch }, classCode) {
+        subscribeToClass({ dispatch }, { classCode, userType }) {
             if (stompClient && stompClient.connected) {
                 stompClient.subscribe(`/sub/class/${classCode}`, (message) => {
                     console.log('Received message: ', message.body);
@@ -96,6 +110,17 @@ const store = createStore({
                     console.log('Received leave message: ', message.body);
                     dispatch('triggerLeave', JSON.parse(message.body));
                 });
+                if (userType === 'student') {
+                    stompClient.subscribe(`/sub/class/${classCode}/picker/start`, (message) => {
+                        console.log('Received picker start message: ', message.body);
+                        dispatch('triggerPickerStart', JSON.parse(message.body));
+                    });
+                } else if (userType === 'teacher') {
+                    stompClient.subscribe(`/sub/class/${classCode}/picker/select`, (message) => {
+                        console.log('Received picker select message: ', message.body);
+                        dispatch('triggerPickerSelect', JSON.parse(message.body));
+                    });
+                }
             } else {
                 console.error('StompClient is not connected.');
             }

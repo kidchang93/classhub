@@ -35,4 +35,16 @@ public class WebSocketController {
         message.setSessionId(headerAccessor.getSessionId());
         template.convertAndSend("/sub/class/" + classCode + "/leave", message);
     }
+
+    @MessageMapping("/picker/start/{classCode}")
+    public void pickerStart(@DestinationVariable(value = "classCode") String classCode, Message message) {
+        template.convertAndSend("/sub/class/" + classCode + "/picker/start", message);
+    }
+
+    @MessageMapping("/picker/select/{classCode}")
+    public void pickerSelect(@DestinationVariable(value = "classCode") String classCode, Message message,
+                             SimpMessageHeaderAccessor headerAccessor) {
+        message.setSessionId(headerAccessor.getSessionId());
+        template.convertAndSend("/sub/class/" + classCode + "/picker/select", message);
+    }
 }

@@ -62,7 +62,7 @@
 
   <DimModal :modalData="modalData"/>
   <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
-  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2"/>
+  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2" :classCode="classCode" :sender="sender"/>
 
   <button @click="toggleWidgetModal1">위젯</button>
   <button @click="toggleWidgetModal2">위젯</button>
@@ -100,6 +100,8 @@ export default {
   data() {
     return {
       sender: this.$route.query.currentUser,
+      userType: this.$route.query.userType, // Added to get user type
+
       isStudentListOpen: false,
       canLeaveSite: false,
       isWidgetModalOpen1:false,
@@ -111,13 +113,15 @@ export default {
     ...mapState(["socket"]),
   },
   mounted() {
-    this.$store.dispatch("subscribeToClass", this.classCode);
+    this.$store.dispatch("subscribeToClass", { classCode: this.classCode, userType: this.userType });
 
     this.$store.subscribe((mutation, state) => {
       if (mutation.type === "addJoin") {
         this.handleStudentListJoin(mutation.payload);
       } else if (mutation.type === "addLeave") {
         this.handleStudentListLeave(mutation.payload);
+      } else if (mutation.type === "addPickerStart" && this.userType === 'teacher') {
+        this.handlePickerStart(mutation.payload);
       }
     });
     window.addEventListener("beforeunload", this.unLoadEvent);
@@ -148,6 +152,7 @@ export default {
         console.log("handleStudentListJoin", message);
         const { sender, sessionId } = message;
         this.students[sessionId] = sender;
+        console.log( this.students);
       } catch (error) {
         console.error(error);
       }
@@ -160,6 +165,10 @@ export default {
       } catch (error) {
         console.error(error);
       }
+    },
+    handlePickerStart(message) {
+      // Handle picker start event for students
+      console.log("Picker start event received:", message);
     },
     toggleStudentList() {
       this.isStudentListOpen = !this.isStudentListOpen;
