@@ -50,7 +50,7 @@ export default {
             this.$router.push({
               name: "Classroom",
               params: { classCode },
-              query: { currentUser: this.username },
+              query: { currentUser: this.username, userType: 'teacher' },
             });
           });
         })

@@ -44,7 +44,7 @@ export default {
             this.$router.push({
               name: "Classroom",
               params: { classCode: this.classCode },
-              query: { currentUser: this.studentName },
+              query: { currentUser: this.studentName, userType: 'student' },
             });
           });
         } catch (error) {
