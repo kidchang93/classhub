@@ -62,7 +62,7 @@
 
   <DimModal :modalData="modalData"/>
   <WidgetModal1 :isWidgetModalOpen="this.isWidgetModalOpen1" @close="toggleWidgetModal1"/>
-  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @close="toggleWidgetModal2"/>
+  <WidgetModal2 :isWidgetModalOpen="this.isWidgetModalOpen2" @toggleWidgetModal="toggleWidgetModal2" :classCode="classCode" :sender="sender"/>
 
   <button @click="toggleWidgetModal1">위젯</button>
   <button @click="toggleWidgetModal2">위젯</button>
@@ -100,6 +100,8 @@ export default {
   data() {
     return {
       sender: this.$route.query.currentUser,
+      userType: this.$route.query.userType, // Added to get user type
+
       isStudentListOpen: false,
       canLeaveSite: false,
       isWidgetModalOpen1:false,
@@ -111,7 +113,7 @@ export default {
     ...mapState(["socket"]),
   },
   mounted() {
-    this.$store.dispatch("subscribeToClass", this.classCode);
+    this.$store.dispatch("subscribeToClass", { classCode: this.classCode, userType: this.userType });
 
     this.$store.subscribe((mutation, state) => {
       if (mutation.type === "addJoin") {
@@ -148,6 +150,7 @@ export default {
         console.log("handleStudentListJoin", message);
         const { sender, sessionId } = message;
         this.students[sessionId] = sender;
+        console.log( this.students);
       } catch (error) {
         console.error(error);
       }
@@ -172,7 +175,7 @@ export default {
       this.isWidgetModalOpen1 = !this.isWidgetModalOpen1;
     },
     toggleWidgetModal2() {
-      this.isWidgetModalOpen2 = !this.isWidgetModalOpen2;
+        this.isWidgetModalOpen2 = !this.isWidgetModalOpen2;
     },
 
   },
