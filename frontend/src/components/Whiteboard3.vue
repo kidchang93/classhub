@@ -1,4 +1,11 @@
 <template>
+
+<!--    <canvas class="fabric"-->
+<!--        ref="canvas"-->
+<!--        @mousedown="handleMouseDown"-->
+<!--        @mousemove="handleMouseMove"-->
+<!--        @mouseup="handleMouseUp">-->
+<!--    </canvas>-->
     <canvas class="fabric" ref="canvas"></canvas>
 
     <div id="designTool">
@@ -82,17 +89,25 @@ export default {
       fillColor:'#ffffff',
       pointer:{},
       draw:[],
+
       rect:{},
       triangle:{},
       circle:{},
       message:{},
+      //
       drawing: false,
-
+      prevX: 0,
+      prevY: 0,
+      lastX: 0,
+      lastY: 0,
       // 화면 속성 변수
-      width: 1920,
-      height: 1080,
-
+      width: 1850,
+      height: 837,
+      // 두 수의 차이
+      xMinusX:0,
+      yMinusY:0,
       // 속성 변수
+      strokeStyle: '',
       lineWidth: 10,
       color: '#ffffff',
       // 사각형 변수
@@ -104,6 +119,7 @@ export default {
   },
   mounted() {
     this.initCanvas();
+    // this.canvas.renderAll();
     this.$store.watch(
       (state) => state.events.length,
       (newLength) => {
@@ -114,59 +130,66 @@ export default {
         }
       }
     );
+    // window.addEventListener("resize", this.resizeCanvas);
+  },
+  beforeUnmount() {
+    // window.removeEventListener("resize", this.resizeCanvas);
   },
   methods: {
     // 캔버스 세팅
     initCanvas() {
 
       this.canvas = new fabric.Canvas(this.$refs.canvas, {
-        width: this.width,
-        height: this.height,
+        width: 1920,
+        height: 1080,
         backgroundColor: '#2c4332',
-        isDrawingMode: false,
-
+        isDrawingMode: true,
       });
-      // 브러시 초기 설정
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.width = this.lineWidth;      console.log("초기 설정 : ",this.canvas);
       // 이벤트 리스너 추가
-      this.canvas.on('mouse:down', this.handleMouseDown)
-      this.canvas.on('mouse:move', this.handleMouseMove)
-      this.canvas.on('mouse:up', this.handleMouseUp)
+      this.canvas.on('mouse:down',(e) => {
+        // 마우스 다운 이벤트이고
+        // 만약 드로잉이 true 값이라면 실행
+        if (this.drawing == true){
+          this.canvas.isDrawingMode = true;
+          // this.onBrush(e)
+          // console.log("true?")
+          // 그러면서 움직였다?
+          this.canvas.on('mouse:move',(e)=> {
+            if (this.canvas.isDrawingMode == true && this.drawing == true) {
+              this.canvas.isDrawingMode = true;
+              this.moveBrush(e)
+              // 이건 밑에다 짜야되는거같긴한데
+              // 움직였지만? 드로잉이 아닌 상태라면 마우스무브 이벤트 끔
+            } else if (this.canvas.isDrawingMode == false && this.drawing == false){
+                  this.canvas.off('mouse:move');
+                  // console.log("설마 여길 들어오냐")
+                  // console.log(this.drawing);
+                }
+          })
+          // 드로잉이 아니라면? 객체를 움직이는거니까
+          // 객체 움직임에 대한 이벤트 전달.
+        } else if (this.drawing == false) {
+          this.canvas.on('object:modified', (e) => {
+            this.canvas.isDrawingMode = false;
+            this.selectObject(e)
+          })
+        }
+      })
 
-      console.log("initCanvas");
+      this.canvas.on('mouse:up',(e)=>{
+        this.handleMouseUp(e)
+      })
+
+
+      console.log("initCanvas", this.canvas.event);
 
     },
-    handleMouseDown(e) {
-      if (this.drawing) {
-        this.canvas.isDrawingMode = true;
-        this.canvas.freeDrawingBrush.color = this.color;
-        this.canvas.freeDrawingBrush.width = this.lineWidth;
-        this.isMouseDown = true;
-      }
-    },
-    handleMouseMove(e) {
-      if (this.drawing && this.isMouseDown) {
-        this.canvas.freeDrawingBrush.color = this.color;
-        this.canvas.freeDrawingBrush.width = this.lineWidth;
-        this.canvas.renderAll();
-      }
-    },
-    handleMouseUp(e) {
-
-      this.drawing = false;
-      this.isMouseDown = false;
-      console.log("마우스 업")
-    },
-
     test(){
       // rect에 집어넣은 변수값으로 생성된다. 이게 되네...
       const newRect = new fabric.Rect(this.rect);
       this.canvas.add(newRect);
       console.log(newRect)
     },
-
-
     eraser(){
       this.drawing = false;
 
@@ -182,14 +205,122 @@ export default {
     // 선 색상 변경
     changeColor(e){
       this.color = e.target.value;
-      this.canvas.freeDrawingBrush.color = this.color;
-      console.log('색깔 : ', this.canvas.freeDrawingBrush.color);
+      this.canvas.color = this.color;
+      console.log('색깔 : ', this.canvas.color);
     },
     changeFillColor(e){
       this.fillColor = e.target.value;
+
+      // this.rect.color = this.fillColor;
+      // console.log(this.rect.color)
+    },
+    // onBrush(event){
+    //   // 포인터를 통해 현재 x,y 좌표 구하기.
+    //   this.canvas.isDrawingMode = true;
+    //   this.pointer = this.canvas.getPointer(event.e);
+    //   let brush = this.canvas.freeDrawingBrush;
+    //   brush = new fabric.PencilBrush({
+    //     _points: this.pointer,
+    //     width: this.lineWidth,
+    //     color: this.color,
+    //   })
+    //   // this.canvas.freeDrawingBrush.width = this.lineWidth;
+    //   // this.canvas.color = this.color;
+    //   this.x = brush.canvas._points.x;
+    //   this.y = brush.canvas._points.y;
+    //
+    //
+    //   console.log("브러쉬 모드 : ", brush);
+    //   console.log("pointer : ", this.pointer);
+    //   // brush.width = parseInt(this.lineWidth) || 1
+    //   // const pointer = this.canvas.getPointer(event.e);
+    //   // this.canvas.isDrawingMode = true;
+    //   //
+    //   // this.x = pointer.x;
+    //   // this.y = pointer.y;
+    //   //
+    //   // this.canvas.freeDrawingBrush.width = this.lineWidth;
+    //   // this.canvas.color = this.color;
+    //
+    //   console.log('x좌표 : ' ,this.x);
+    //   console.log('y좌표 : ' ,this.y);
+    //   console.log('lineWidth : ' ,this.lineWidth);
+    //   console.log('color : ' ,this.color);
+    // },
+    moveBrush(event){
+      // 포인터를 통해 현재 x,y 좌표 구하기.
+
+      this.canvas.isDrawingMode = true;
+      this.drawing = true;
+      const pointer = this.canvas.getPointer(event.e);
+      let brush = this.canvas.freeDrawingBrush;
+      brush = fabric.PencilBrush
+      this.x = pointer.x;
+      this.y = pointer.y;
+      this.prevX = this.x;
+      this.prevY = this.y;
+
+
+      console.log('x좌표 : ' ,this.x);
+      console.log('y좌표 : ' ,this.y);
+      console.log('lineWidth : ' ,this.lineWidth);
+      console.log('color : ' ,this.color);
+      console.log("브러쉬 모드 : ", brush);
+      this.canvas.renderAll();
+      // this.draw = [this.prevX,this.prevY,this.x,this.y];
+      // console.log(`prevXY : ${this.prevX},${this.prevX} || ${this.x}, ${this.y}`);
+
+      // 메세지에 newLine 객체 담아서 보내기
+      // this.sendMessage("DRAW",newLine);
     },
 
+    // brush 선택시 마우스다운 핸들러 들어갔을 때 수행하는 함수
+    // onBrush(event){
+    //   // 포인터를 통해 현재 x,y 좌표 구하기.
+    //   let brush = this.canvas.freeDrawingBrush;
+    //   brush.width = parseInt(this.lineWidth) || 1
+    //   const pointer = this.canvas.getPointer(event.e);
+    //   this.canvas.isDrawingMode = true;
+    //
+    //   this.x = pointer.x;
+    //   this.y = pointer.y;
+    //
+    //   this.canvas.freeDrawingBrush.width = this.lineWidth;
+    //   this.canvas.color = this.color;
+    //
+    //   console.log('x좌표 : ' ,this.x);
+    //   console.log('y좌표 : ' ,this.y);
+    //   console.log('lineWidth : ' ,this.canvas.freeDrawingBrush.width);
+    //   console.log('color : ' ,this.canvas.color);
+    // },
 
+    // moveBrush(event){
+    //   // 포인터를 통해 현재 x,y 좌표 구하기.
+    //
+    //   const pointer = this.canvas.getPointer(event.e);
+    //
+    //   let brush = this.canvas.freeDrawingBrush;
+    //   brush.width = parseInt(this.lineWidth) || 1
+    //
+    //   const newLine = new fabric.Line([this.x, this.y, pointer.x, pointer.y], {
+    //     stroke: this.color,
+    //     strokeWidth: brush.width,
+    //     strokeLineCap: this.lineCap,
+    //     selectable: false,
+    //     event: true,
+    //   });
+    //   this.canvas.add(newLine);
+    //
+    //   this.prevX = this.x;
+    //   this.prevY = this.y;
+    //   this.x = pointer.x;
+    //   this.y = pointer.y;
+    //   this.draw = [this.prevX,this.prevY,this.x,this.y];
+    //   console.log(`prevXY : ${this.prevX},${this.prevX} || ${this.x}, ${this.y}`);
+    //
+    //   // 메세지에 newLine 객체 담아서 보내기
+    //   this.sendMessage("DRAW",newLine);
+    // },
     // 기존 이벤트 핸들러 제거 => initial 함수에서 조건에 맞는 함수로 event 보내기
 
     sendMessage(type, event){
@@ -304,6 +435,20 @@ export default {
       this.canvas.renderAll();
       this.sendMessage(selectObject);
     },
+    // 그리기 스탑
+    handleMouseUp(e) {
+      // this.canvas.isDrawingMode = false;
+      if (this.drawing == true){
+        this.drawing = true;
+      } else if (this.drawing == false){
+        this.drawing = false;
+      }
+
+      // this.canvas.renderAll(e);
+
+      console.log("stop", e)
+    },
+
     // 전체삭제 버튼
     buttonErase() {
       this.canvas.clear();
@@ -314,9 +459,6 @@ export default {
       this.mode = 'brush';
       this.drawing = true;
       this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.lineWidth = this.lineWidth;
-
     },
     // 도형 추가 버튼
     toggleMode(mode) {
@@ -357,7 +499,7 @@ export default {
         const rcvDraw = new fabric.Line(data.draw,data);
         this.canvas.add(rcvDraw);
         console.log("받아서 그린 것 : ",rcvDraw);
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
 
         // console.log(`보낸 메세지: , x: ${x} y: ${y} prevX: ${prevX}, prevY: ${prevY}, color: ${color}, fillColor: ${fillColor}, lineWidth:${lineWidth}, rect: ${rect}, triangle: ${triangle}, circle: ${circle}` , data);
 
@@ -368,11 +510,19 @@ export default {
 </script>
 
 <style scoped>
-
+#whiteboard {
+  position: relative;
+  /*background: #043e1a;*/
+}
 .fabric {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #2c4332;
-  /*width: 100%;
-  height: 100%;*/
+}
+canvas {
+  display: block;
 }
 
 #designTool {
