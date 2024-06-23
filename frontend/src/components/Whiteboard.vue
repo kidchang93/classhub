@@ -157,8 +157,25 @@ export default {
         this.canvas.off('mouse:off')
       })
 
-      this.canvas.on('object:added', (e) => {
-        this.sendMessage(this.rect);
+      // 여기는 이벤트에 반응을 해버리기 때문에 함부로 쓰면 안된다. 재귀처럼 동작함.
+      // this.canvas.on('object:added', (e) => {
+      //   this.sendMessage("rect",this.rect);
+      // })
+
+      // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
+      // 지금은 웹소켓의 설정으로 인해 다시 학생에게 추가된 객체에 대해서는 받고있는 상황.
+      // 학생쪽에서 해당 객체를 컨트롤하면 보내진 않음.
+      this.canvas.on('object:modified', (e) => {
+        if (this.mode == 'rect'){
+          let modRect = this.rect;
+          this.sendMessage('rect',modRect);
+        } else if (this.mode == 'circle'){
+          let modCircle = this.circle;
+          this.sendMessage('circle', modCircle);
+        } else if (this.mode == 'triangle'){
+          let modTriangle = this.triangle;
+          this.sendMessage('triangle', modTriangle);
+        }
       })
 
       console.log("initCanvas");
@@ -180,6 +197,7 @@ export default {
         this.canvas.isDrawingMode = true;
 
         this.canvas.freeDrawingBrush.color = this.color;
+        this.canvas.freeDrawingBrush.trans = this.color;
         this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
 
         console.log("마우스 다운")
@@ -225,8 +243,10 @@ export default {
 
     eraser(){
       this.drawing = false;
-
-      console.log("지우개 모드 맞음? : ",this.canvas.freeDrawingBrush);
+      this.mode = 'eraser';
+      const eraserBrush = fabric.util.createClass(new fabric.PencilBrush)
+      eraserBrush.prototype.erasable = true;
+      console.log("지우개 모드 맞음? : ",eraserBrush);
     },
     // 선 굵기 변경
     changeLineWidth(e) {
@@ -263,6 +283,24 @@ export default {
           sender: this.sender,
           data: event,
         });
+      } else if (type == 'circle') {
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          data: event,
+        });
+      } else if (type == 'triangle') {
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          data: event,
+        });
+      } else if (type == 'erase') {
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          data: event,
+        });
       }
       if (this.socket && this.socket.connected) {
         this.socket.publish({
@@ -274,7 +312,7 @@ export default {
     },
 
     // 사각형 도형 추가 버튼
-    addRect(e){
+    addRect(){
       const rect = new fabric.Rect({
         // top: Math.random() * this.canvas.height,
         // left: Math.random() * this.canvas.width,
@@ -295,9 +333,9 @@ export default {
       this.rect = rect;
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
-      // this.canvas.renderAll();
+      this.canvas.renderAll();
 
-      // this.sendMessage("rect",rect);
+      this.sendMessage("rect",rect);
       console.log("rect", rect);
       console.log("도형 추가")
     },
@@ -321,7 +359,7 @@ export default {
       this.circle = circle;
       this.canvas.add(circle);
       this.canvas.setActiveObject(circle);
-      this.canvas.renderAll();
+      // this.canvas.renderAll();
       this.sendMessage("circle",circle);
       console.log("circle", circle);
       console.log("도형 추가")
@@ -345,9 +383,8 @@ export default {
       this.triangle = triangle;
       this.canvas.add(triangle);
       this.canvas.setActiveObject(triangle);
-      this.canvas.renderAll();
+      // this.canvas.renderAll();
       this.sendMessage("triangle",triangle);
-      this.canvas.on('object:added')
       console.log("triangle", triangle);
       console.log("도형 추가")
     },
@@ -364,6 +401,7 @@ export default {
     buttonErase() {
       this.canvas.clear();
       this.canvas.renderAll();
+      this.sendMessage('erase');
     },
     // 그리기 버튼
     toggleDrawMode() {
@@ -382,7 +420,7 @@ export default {
         this.drawing = false;
         this.mode = 'rect'
         console.log(this.mode)
-        this.addRect(e)
+        this.addRect()
 
       } else if(mode == 'circle') {
         this.canvas.isDrawingMode = false;
@@ -390,10 +428,11 @@ export default {
         this.mode = 'circle'
         console.log(this.mode)
         this.addCircle()
+
       } else if(mode == 'triangle'){
         this.canvas.isDrawingMode = false;
         this.drawing = false;
-        this.mode = 'circle'
+        this.mode = 'triangle'
         console.log(this.mode)
         this.addTriangle()
       }
@@ -409,7 +448,7 @@ export default {
       const {type, data} = message;
       console.log("받은 message : ", message);
 
-      if (type === 'DRAW') {
+      if (type == 'DRAW') {
         const { x, y, prevX, prevY, color, width } = data;
 
         const context = this.canvas.getContext('2d');
@@ -422,18 +461,30 @@ export default {
         context.stroke();
 
       }
-      if (type === 'rect'){
+      // if (type == 'DRAW'){
+      //   const { x, y, prevX, prevY, color, width } = data;
+      //   const brush = this.canvas.freeDrawingBrush;
+      //   console.log("brush : " ,brush)
+      //   brush.color = color;
+      //   brush.width = width;
+      //   brush._render(brush);
+      //   // console.log("brush : " ,brush)
+      // }
+      if (type == 'rect'){
         const newRect = new fabric.Rect(data);
         this.canvas.add(newRect);
         // this.canvas.renderAll();
       }
-      if (type === 'circle'){
+      if (type == 'circle'){
         const newCircle = new fabric.Circle(data);
         this.canvas.add(newCircle);
       }
-      if (type === 'triangle'){
+      if (type == 'triangle'){
         const triangle = new fabric.Triangle(data);
         this.canvas.add(triangle);
+      }
+      if (type == 'erase'){
+        this.canvas.clear();
       }
     }
   },
