@@ -40,7 +40,7 @@
 
 
   </div>
-  <Whiteboard :classCode="classCode" :sender="sender" />
+  <Whiteboard :classCode="classCode" :sender="sender" :clientId="clientId"/>
 
 
   <!-- Student List Modal -->
@@ -74,6 +74,7 @@
 import Whiteboard from "../components/Whiteboard.vue";
 import { mapState } from "vuex";
 import { reactive } from "vue";
+import { v4 as uuidv4 } from "uuid";
 import DimModal from "../components/DimModal.vue";
 import WidgetModal1 from "../components/WidgetModal1.vue";
 import WidgetModal2 from "../components/WidgetModal2.vue";
@@ -106,7 +107,7 @@ export default {
       canLeaveSite: false,
       isWidgetModalOpen1:false,
       isWidgetModalOpen2:false,
-
+      clientId: uuidv4(),
     };
   },
   computed: {

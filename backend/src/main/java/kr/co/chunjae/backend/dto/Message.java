@@ -11,6 +11,7 @@ public class Message {
     private String type;
     private String sender;
     private String sessionId;
+    private String clientId;
     private Map<String, Object> data;
 
 }

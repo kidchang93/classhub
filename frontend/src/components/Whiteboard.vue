@@ -70,6 +70,7 @@ export default {
       type: String,
       required: true,
     },
+    clientId: String,
   },
   data() {
     return {
@@ -94,7 +95,10 @@ export default {
       // 속성 변수
       lineWidth: 10,
       color: '#ffffff',
-      // 사각형 변수
+      // old 객체 변수
+      oldRect:{},
+      oldCircle:{},
+      oldTriangle:{},
 
     };
   },
@@ -130,7 +134,7 @@ export default {
       // 브러시 초기 설정
       this.canvas.freeDrawingBrush.color = this.color;
       this.canvas.freeDrawingBrush.width = this.lineWidth;
-
+      console.log("클라이언트 ID : ",this.clientId);
       console.log("초기 설정 : ",this.canvas);
       // 이벤트 리스너 추가
 
@@ -275,30 +279,35 @@ export default {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          clientId: this.clientId,
           data: event,
         });
       } else if (type == 'rect') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          clientId: this.clientId,
           data: event,
         });
       } else if (type == 'circle') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          clientId: this.clientId,
           data: event,
         });
       } else if (type == 'triangle') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          clientId: this.clientId,
           data: event,
         });
       } else if (type == 'erase') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          clientId: this.clientId,
           data: event,
         });
       }
@@ -331,6 +340,7 @@ export default {
         }
       )
       this.rect = rect;
+      this.oldRect = rect;
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
@@ -357,6 +367,7 @@ export default {
 
       })
       this.circle = circle;
+      this.oldCircle = circle;
       this.canvas.add(circle);
       this.canvas.setActiveObject(circle);
       // this.canvas.renderAll();
@@ -381,6 +392,7 @@ export default {
         evented: true,
       })
       this.triangle = triangle;
+      this.oldTriangle = triangle;
       this.canvas.add(triangle);
       this.canvas.setActiveObject(triangle);
       // this.canvas.renderAll();
@@ -447,7 +459,12 @@ export default {
     handleIncomingDrawing(message) {
       const {type, data} = message;
       console.log("받은 message : ", message);
+      const clientId = message.clientId;
+      console.log("handle 밖 clientId : " ,clientId)
 
+      if (clientId == this.clientId){
+        return;
+      }
       if (type == 'DRAW') {
         const { x, y, prevX, prevY, color, width } = data;
 
@@ -472,15 +489,17 @@ export default {
       // }
       if (type == 'rect'){
         const newRect = new fabric.Rect(data);
+        this.canvas.clear(this.oldRect);
         this.canvas.add(newRect);
-        // this.canvas.renderAll();
       }
       if (type == 'circle'){
         const newCircle = new fabric.Circle(data);
+        this.canvas.clear(this.oldCircle);
         this.canvas.add(newCircle);
       }
       if (type == 'triangle'){
         const triangle = new fabric.Triangle(data);
+        this.canvas.clear(this.oldTriangle);
         this.canvas.add(triangle);
       }
       if (type == 'erase'){
