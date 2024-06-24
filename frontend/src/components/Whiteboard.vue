@@ -99,6 +99,7 @@ export default {
       oldRect:{},
       oldCircle:{},
       oldTriangle:{},
+      selectObj:{},
 
     };
   },
@@ -127,7 +128,7 @@ export default {
         height: 1080,
         backgroundColor: '#2c4332',
         isDrawingMode: false,
-
+        erasable:false,
       });
       this.$refs.canvas.width = 1920;
       this.$refs.canvas.height = 1080;
@@ -145,6 +146,10 @@ export default {
             this.y = pointer.y
             this.drawing = true;
             this.handleMouseDown(e)
+          } else if (this.mode == 'eraser'){
+            this.eraser(e)
+            this.sendMessage('eraser',this.selectObj);
+            console.log("eraser 모드 : ", this.selectObj);
           }
         })
       this.canvas.on('mouse:move', (e) => {
@@ -179,6 +184,8 @@ export default {
         } else if (this.mode == 'triangle'){
           let modTriangle = this.triangle;
           this.sendMessage('triangle', modTriangle);
+        } else if (this.mode == 'eraser'){
+          this.sendMessage('eraser', this.selectObj);
         }
       })
 
@@ -245,12 +252,17 @@ export default {
     },
 
 
-    eraser(){
+    eraser(e){
       this.drawing = false;
+      this.canvas.isDrawingMode = false;
       this.mode = 'eraser';
-      const eraserBrush = fabric.util.createClass(new fabric.PencilBrush)
-      eraserBrush.prototype.erasable = true;
-      console.log("지우개 모드 맞음? : ",eraserBrush);
+
+      const selectObj = e.target;
+      this.selectObj = selectObj;
+
+      this.canvas.remove(selectObj);
+      this.canvas.renderAll();
+
     },
     // 선 굵기 변경
     changeLineWidth(e) {
@@ -304,6 +316,13 @@ export default {
           data: event,
         });
       } else if (type == 'erase') {
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          clientId: this.clientId,
+          data: event,
+        });
+      } else if (type == 'eraser'){
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
@@ -454,14 +473,15 @@ export default {
       this.canvas.isDrawingMode = false;
       this.drawing = false;
     },
+    deleteObject(){
+
+    },
 
     // 메시지 수신 처리 함수
     handleIncomingDrawing(message) {
       const {type, data} = message;
       console.log("받은 message : ", message);
       const clientId = message.clientId;
-      console.log("handle 밖 clientId : " ,clientId)
-
       if (clientId == this.clientId){
         return;
       }
@@ -478,32 +498,31 @@ export default {
         context.stroke();
 
       }
-      // if (type == 'DRAW'){
-      //   const { x, y, prevX, prevY, color, width } = data;
-      //   const brush = this.canvas.freeDrawingBrush;
-      //   console.log("brush : " ,brush)
-      //   brush.color = color;
-      //   brush.width = width;
-      //   brush._render(brush);
-      //   // console.log("brush : " ,brush)
-      // }
       if (type == 'rect'){
+
         const newRect = new fabric.Rect(data);
-        this.canvas.clear(this.oldRect);
+
         this.canvas.add(newRect);
+
+        this.canvas.renderAll();
       }
       if (type == 'circle'){
         const newCircle = new fabric.Circle(data);
-        this.canvas.clear(this.oldCircle);
+        // this.canvas.clear(this.oldCircle);
         this.canvas.add(newCircle);
       }
       if (type == 'triangle'){
         const triangle = new fabric.Triangle(data);
-        this.canvas.clear(this.oldTriangle);
+        // this.canvas.clear(this.oldTriangle);
         this.canvas.add(triangle);
       }
       if (type == 'erase'){
         this.canvas.clear();
+      }
+      if (type == 'eraser'){
+        this.canvas.remove(data);
+        this.canvas.renderAll();
+        console.log("eraser : ",data)
       }
     }
   },
