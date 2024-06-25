@@ -151,11 +151,8 @@ export default {
             this.eraser(e)
             // this.sendMessage('eraser',this.selectObj);
             // console.log("eraser 모드 : ", this.selectObj);
-          } else if(this.mode == 'click'){
-            this.objectId = e.target.id;
-            console.log("이게 맞ㄴ냐 : ",e.target);
-            console.log("모드는 : ",this.mode);
-            this.clickObject(e);
+          } else if (this.mode == 'click'){
+            this.clickObject(e)
           }
         })
       this.canvas.on('mouse:move', (e) => {
@@ -169,7 +166,7 @@ export default {
       })
       this.canvas.on('mouse:up', (e) => {
         this.handleMouseUp(e)
-        this.canvas.off('mouse:off')
+
       })
 
       // add 될 때 uuid 부여하면 학생쪽도 생기는 이벤트니까 각각 다른 값 들어감 add 메서드에서 하자
@@ -247,8 +244,10 @@ export default {
     handleMouseUp(e) {
 
       this.drawing = false;
-      const activeObj = this.canvas.getActiveObject();
-      console.log("마우스 업", activeObj)
+
+      // this.canvas.getActiveObject();
+
+      console.log("마우스 업")
     },
 
     test(){
@@ -302,6 +301,7 @@ export default {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
+          id: this.objectId,
           clientId: this.clientId,
           data: event,
         });
@@ -488,8 +488,8 @@ export default {
       this.mode = 'click';
       this.canvas.isDrawingMode = false;
       this.drawing = false;
-      // this.objectId = e.target.id;
-      console.log("지금 객체는 : ", e.target.id);
+      this.objectId = e.target;
+      console.log("지금 객체는 : ",  this.objectId);
     },
 
 
@@ -502,9 +502,18 @@ export default {
         return;
       }
       if (type == 'DRAW') {
+        // const { x, y, prevX, prevY, color, width } = data;
 
-        // const newDraw = this.canvas.freeDrawingBrush;
-        //
+        // 새로운 경로를 생성하여 캔버스에 추가합니다.
+        // const line = new fabric.BaseBrush([prevX, prevY, x, y], {
+        //   stroke: color,
+        //   strokeWidth: width,
+        //   selectable: false, // 사용자 상호작용을 방지합니다.
+        //   evented: false // 이벤트를 발생시키지 않습니다.
+        // });
+        // this.canvas.add(line);
+        // const newDraw = new fabric.Object(data);
+
         // newDraw.x = data.x;
         // newDraw.y = data.y;
         // newDraw.prevX = data.prevX;
@@ -512,9 +521,9 @@ export default {
         // newDraw.width = data.width;
         // newDraw.color = data.color;
         // console.log("newDraw : ",newDraw)
-        // // this.canvas.add(newDraw);
+        // this.canvas.add(newDraw);
         // const drawing = new fabric.PencilBrush(newDraw);
-        // this.canvas.add(drawing)
+        // this.canvas.add(newDraw)
         // this.canvas.renderAll();
 
         // this.canvas.add(data);
@@ -529,6 +538,8 @@ export default {
         context.lineTo(x, y);
         context.stroke();
 
+        // const a = this.canvas.getObjects();
+        // console.log("받고난 다음 객체 됨 ? : ",a)
       }
       if (type == 'rect'){
 
