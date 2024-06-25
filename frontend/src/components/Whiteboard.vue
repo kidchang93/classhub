@@ -527,18 +527,19 @@ export default {
         // this.canvas.renderAll();
 
         // this.canvas.add(data);
-        const { x, y, prevX, prevY, color, width } = data;
+        // const { x, y, prevX, prevY, color, width } = data;
 
-        const context = this.canvas.getContext('2d');
-        context.strokeStyle = color;
-        context.lineWidth = width;
-        context.lineCap = this.lineCap;
-        context.beginPath();
-        context.moveTo(prevX, prevY);
-        context.lineTo(x, y);
-        context.stroke();
+        // const context = this.canvas.getContext('2d');
 
-        // const a = this.canvas.getObjects();
+        // context.strokeStyle = color;
+        // context.lineWidth = width;
+        // context.lineCap = this.lineCap;
+        // context.beginPath();
+        // context.moveTo(prevX, prevY);
+        // context.lineTo(x, y);
+        // context.stroke();
+
+        this.canvas.add(context)
         // console.log("받고난 다음 객체 됨 ? : ",a)
       }
       if (type == 'rect'){
