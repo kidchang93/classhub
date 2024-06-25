@@ -59,6 +59,7 @@
 <script>
 import { mapState } from "vuex";
 import {fabric} from "fabric";
+import {parse, v4 as uuidv4} from "uuid";
 export default {
   name: "Whiteboard",
   props: {
@@ -100,7 +101,7 @@ export default {
       oldCircle:{},
       oldTriangle:{},
       selectObj:{},
-
+      objectId: '',
     };
   },
   computed: {
@@ -148,8 +149,13 @@ export default {
             this.handleMouseDown(e)
           } else if (this.mode == 'eraser'){
             this.eraser(e)
-            this.sendMessage('eraser',this.selectObj);
-            console.log("eraser 모드 : ", this.selectObj);
+            // this.sendMessage('eraser',this.selectObj);
+            // console.log("eraser 모드 : ", this.selectObj);
+          } else if(this.mode == 'click'){
+            this.objectId = e.target.id;
+            console.log("이게 맞ㄴ냐 : ",e.target);
+            console.log("모드는 : ",this.mode);
+            this.clickObject(e);
           }
         })
       this.canvas.on('mouse:move', (e) => {
@@ -166,9 +172,12 @@ export default {
         this.canvas.off('mouse:off')
       })
 
-      // 여기는 이벤트에 반응을 해버리기 때문에 함부로 쓰면 안된다. 재귀처럼 동작함.
+      // add 될 때 uuid 부여하면 학생쪽도 생기는 이벤트니까 각각 다른 값 들어감 add 메서드에서 하자
       // this.canvas.on('object:added', (e) => {
-      //   this.sendMessage("rect",this.rect);
+      //   // uuid 값 부여함.
+      //   this.objectId = uuidv4();
+      //   e.target.id = this.objectId;
+      //   console.log("아이디 부여 : ",e.target.id)
       // })
 
       // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
@@ -184,8 +193,6 @@ export default {
         } else if (this.mode == 'triangle'){
           let modTriangle = this.triangle;
           this.sendMessage('triangle', modTriangle);
-        } else if (this.mode == 'eraser'){
-          this.sendMessage('eraser', this.selectObj);
         }
       })
 
@@ -208,7 +215,7 @@ export default {
         this.canvas.isDrawingMode = true;
 
         this.canvas.freeDrawingBrush.color = this.color;
-        this.canvas.freeDrawingBrush.trans = this.color;
+        // this.canvas.freeDrawingBrush.trans = this.color;
         this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
 
         console.log("마우스 다운")
@@ -240,8 +247,8 @@ export default {
     handleMouseUp(e) {
 
       this.drawing = false;
-
-      console.log("마우스 업")
+      const activeObj = this.canvas.getActiveObject();
+      console.log("마우스 업", activeObj)
     },
 
     test(){
@@ -257,11 +264,14 @@ export default {
       this.canvas.isDrawingMode = false;
       this.mode = 'eraser';
 
-      const selectObj = e.target;
-      this.selectObj = selectObj;
+      const pointer = this.canvas.getPointer(e);
+      const selectObj = this.canvas.getObjects().find(obj => obj.containsPoint(pointer));
+      console.log("selectObj : ", selectObj);
+      if (selectObj){
+        this.canvas.remove(selectObj);
+        this.sendMessage('eraser',selectObj);
 
-      this.canvas.remove(selectObj);
-      this.canvas.renderAll();
+      }
 
     },
     // 선 굵기 변경
@@ -285,20 +295,23 @@ export default {
     // 기존 이벤트 핸들러 제거 => initial 함수에서 조건에 맞는 함수로 event 보내기
 
     sendMessage(type, event){
+      console.log("sendType : ", type)
       console.log("sendMessage : ",event)
       // Drawing 메시지 전송
-      if (type == 'DRAW') {
+      if (this.mode == 'brush') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
           clientId: this.clientId,
           data: event,
         });
+        console.log("지금 모드는 : ", this.mode)
       } else if (type == 'rect') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
           clientId: this.clientId,
+          id: this.objectId,
           data: event,
         });
       } else if (type == 'circle') {
@@ -327,6 +340,7 @@ export default {
           type: type,
           sender: this.sender,
           clientId: this.clientId,
+          id: this.objectId,
           data: event,
         });
       }
@@ -356,10 +370,12 @@ export default {
         hasControls: true,
         selectable: true,
         evented: true,
+        id:uuidv4(),
         }
       )
       this.rect = rect;
       this.oldRect = rect;
+      this.objectId = rect.id;
       this.canvas.add(rect);
       this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
@@ -468,14 +484,14 @@ export default {
         this.addTriangle()
       }
     },
-    clickObject(){
-      this.mode = '';
+    clickObject(e){
+      this.mode = 'click';
       this.canvas.isDrawingMode = false;
       this.drawing = false;
+      // this.objectId = e.target.id;
+      console.log("지금 객체는 : ", e.target.id);
     },
-    deleteObject(){
 
-    },
 
     // 메시지 수신 처리 함수
     handleIncomingDrawing(message) {
@@ -486,6 +502,22 @@ export default {
         return;
       }
       if (type == 'DRAW') {
+
+        // const newDraw = this.canvas.freeDrawingBrush;
+        //
+        // newDraw.x = data.x;
+        // newDraw.y = data.y;
+        // newDraw.prevX = data.prevX;
+        // newDraw.prevY = data.prevY;
+        // newDraw.width = data.width;
+        // newDraw.color = data.color;
+        // console.log("newDraw : ",newDraw)
+        // // this.canvas.add(newDraw);
+        // const drawing = new fabric.PencilBrush(newDraw);
+        // this.canvas.add(drawing)
+        // this.canvas.renderAll();
+
+        // this.canvas.add(data);
         const { x, y, prevX, prevY, color, width } = data;
 
         const context = this.canvas.getContext('2d');
@@ -520,9 +552,20 @@ export default {
         this.canvas.clear();
       }
       if (type == 'eraser'){
-        this.canvas.remove(data);
-        this.canvas.renderAll();
-        console.log("eraser : ",data)
+        console.log("data.id : ",data.id);
+        const objectToRemove = this.canvas.getObjects().find(obj => obj.id === data.id);
+            // .find(obj => obj.id == data.id);
+
+        console.log("objectToRemove : ", objectToRemove);
+        if (objectToRemove){
+
+          this.canvas.remove(objectToRemove);
+          this.canvas.renderAll();
+
+        }
+
+
+
       }
     }
   },
