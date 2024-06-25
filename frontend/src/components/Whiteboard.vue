@@ -6,6 +6,7 @@
       <button type="button" class="btn btn-secondary" @click="buttonErase">모두 지우기</button>
       <br>
       <button type="button" class="btn btn-secondary" @click="eraser">지우개</button>
+      <button type="button" class="btn btn-secondary" @click="activateEraserMode">드로잉 지우개</button>
       <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
@@ -165,6 +166,7 @@ export default {
 
       })
       this.canvas.on('mouse:up', (e) => {
+        this.objectId = uuidv4();
         this.handleMouseUp(e)
 
       })
@@ -196,6 +198,50 @@ export default {
       console.log("initCanvas");
 
     },
+
+    // 지우개 커스텀 클래스 함수 정의
+    // EraserBrush: fabric.util.createClass(fabric.PencilBrush, {
+    //   _finalizeAndAddPath: function() {
+    //     const ctx = this.canvas.contextTop;
+    //     ctx.closePath();
+    //     if (this.decimate) {
+    //       this._points = this.decimatePoints(this._points, this.decimate);
+    //     }
+    //     const pathData = this.convertPointsToSVGPath(this._points).join('');
+    //     if (pathData === 'M 0 0 Q 0 0 0 0 L 0 0') {
+    //       this.canvas.requestRenderAll();
+    //       return;
+    //     }
+    //
+    //     const path = this.createPath(pathData);
+    //     path.globalCompositeOperation = 'destination-out';  // This is the key part for erasing
+    //     this.canvas.clearContext(this.canvas.contextTop);
+    //     this.canvas.add(path);
+    //     this.canvas.requestRenderAll();
+    //     this._resetShadow();
+    //   },
+    // }),
+    // activateEraserMode() {
+    //   this.canvas.isDrawingMode = true;
+    //   this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
+    //   this.canvas.freeDrawingBrush.width = this.lineWidth;  // Set eraser size
+    //
+    //   // Set up event listeners for eraser actions
+    //   this.canvas.on('mouse:up', this.handleEraserEvent);
+    // },
+    // handleEraserEvent(event) {
+    //   if (this.canvas.freeDrawingBrush instanceof this.EraserBrush) {
+    //     const erasedObject = this.canvas.getActiveObject();
+    //     if (erasedObject) {
+    //       const eraserData = {
+    //         id: erasedObject.id,
+    //         type: 'eraser',
+    //       };
+    //       this.sendMessage('eraser', eraserData);
+    //       this.canvas.remove(erasedObject);
+    //     }
+    //   }
+    // },
     handleMouseDown(e) {
       const pointer = this.canvas.getPointer(e);
 
@@ -245,9 +291,7 @@ export default {
 
       this.drawing = false;
 
-      // this.canvas.getActiveObject();
-
-      console.log("마우스 업")
+      console.log("마우스 업");
     },
 
     test(){
@@ -297,7 +341,7 @@ export default {
       console.log("sendType : ", type)
       console.log("sendMessage : ",event)
       // Drawing 메시지 전송
-      if (this.mode == 'brush') {
+      if (type == 'DRAW') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
@@ -502,45 +546,19 @@ export default {
         return;
       }
       if (type == 'DRAW') {
-        // const { x, y, prevX, prevY, color, width } = data;
 
-        // 새로운 경로를 생성하여 캔버스에 추가합니다.
-        // const line = new fabric.BaseBrush([prevX, prevY, x, y], {
-        //   stroke: color,
-        //   strokeWidth: width,
-        //   selectable: false, // 사용자 상호작용을 방지합니다.
-        //   evented: false // 이벤트를 발생시키지 않습니다.
-        // });
-        // this.canvas.add(line);
-        // const newDraw = new fabric.Object(data);
+        const { x, y, prevX, prevY, color, width } = data;
+        console.log("학생 data : ",data);
+        const context = this.canvas.getContext('2d');
 
-        // newDraw.x = data.x;
-        // newDraw.y = data.y;
-        // newDraw.prevX = data.prevX;
-        // newDraw.prevY = data.prevY;
-        // newDraw.width = data.width;
-        // newDraw.color = data.color;
-        // console.log("newDraw : ",newDraw)
-        // this.canvas.add(newDraw);
-        // const drawing = new fabric.PencilBrush(newDraw);
-        // this.canvas.add(newDraw)
-        // this.canvas.renderAll();
+        context.strokeStyle = color;
+        context.lineWidth = width;
+        context.lineCap = this.lineCap;
+        context.beginPath();
+        context.moveTo(prevX, prevY);
+        context.lineTo(x, y);
+        context.stroke();
 
-        // this.canvas.add(data);
-        // const { x, y, prevX, prevY, color, width } = data;
-
-        // const context = this.canvas.getContext('2d');
-
-        // context.strokeStyle = color;
-        // context.lineWidth = width;
-        // context.lineCap = this.lineCap;
-        // context.beginPath();
-        // context.moveTo(prevX, prevY);
-        // context.lineTo(x, y);
-        // context.stroke();
-
-        this.canvas.add(context)
-        // console.log("받고난 다음 객체 됨 ? : ",a)
       }
       if (type == 'rect'){
 
