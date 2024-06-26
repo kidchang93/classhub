@@ -188,26 +188,8 @@ export default {
         }
       })
 
-      // 지워진 객체들을 처리하는 이벤트 리스너
-      this.canvas.on('path:created', (e) => {
-        console.log("들어옴? ")
-        // 지우개 브러시로 경로가 생성될 때의 이벤트 처리
-        const path = e.path;
-        console.log("패thㅡ!!!! : ", path)
-      })
-      // 지우기 끝난 후 호출되는 이벤트 리스너
-      // this.canvas.on('erasing: end',({targets, drawables}) => {
-      //
-      //   // 지워진 객체들을 그룹으로 묶어 캔버스에 추가
-      //   const group = new fabric.Group([...targets]);
-      //   console.log("지울수 있는 애 : ", drawables);
-      //   console.log("그룹화 : ",group)
-      //   this.canvas.add(group)
-      //
-      //   this.canvas.renderAll();
-      //
-      // })
 
+      // 지우기 끝난 후 호출되는 이벤트 리스너
 
       console.log("initCanvas");
 
@@ -235,7 +217,6 @@ export default {
           this._resetShadow();
         },
     }),
-
 
     // 지우개 모드 가동
     activateEraserMode(mode) {
@@ -322,9 +303,13 @@ export default {
       this.canvas.isDrawingMode = true;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
+      if (this.mode == 'brush'){
 
-      if (this.mode == 'eraserBrush'){
-        this.erasedObjects = this.getErasedObjects();
+        console.log("마우스 업", this.brush);
+
+      } else if (this.mode == 'eraserBrush'){
+
+        this.erasedObjects = this.getErasedObjects(); // 추출한 함수를 담는 배열
         if (this.erasedObjects.length > 0){
           const group = new fabric.Group(this.erasedObjects);
           console.log("그룹 정보 : ", group);
@@ -332,8 +317,6 @@ export default {
           this.canvas.renderAll();
         }
 
-      } else  {
-        return
       }
       console.log("마우스 업", this.brush);
     },
@@ -343,10 +326,11 @@ export default {
 
       for (let obj of objects){
         if (obj.globalCompositeOperation === 'destination-out'){
+          console.log("지워진 객체 : ",obj)
           this.erasedObjects.push(obj);
         }
       }
-      console.log("지워진 객체 정보 : ", this.erasedObjects)
+      // console.log("지워진 객체 정보 : ", this.erasedObjects)
       return this.erasedObjects;
     },
     test(){
@@ -646,7 +630,6 @@ export default {
       if (type == 'eraser'){
         console.log("data.id : ",data.id);
         const objectToRemove = this.canvas.getObjects().find(obj => obj.id === data.id);
-            // .find(obj => obj.id == data.id);
 
         console.log("objectToRemove : ", objectToRemove);
         if (objectToRemove){
