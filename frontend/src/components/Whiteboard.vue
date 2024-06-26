@@ -5,8 +5,9 @@
     <div id="designTool">
       <button type="button" class="btn btn-secondary" @click="buttonErase">모두 지우기</button>
       <br>
-      <button type="button" class="btn btn-secondary" @click="eraser">지우개</button>
-      <button type="button" class="btn btn-secondary" @click="activateEraserMode">드로잉 지우개</button>
+      <button type="button" class="btn btn-secondary" @click="eraser">도형 지우개</button>
+      <br>
+      <button type="button" class="btn btn-secondary" @click="activateEraserMode('eraserBrush')">드로잉 지우개</button>
       <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
@@ -23,15 +24,10 @@
       <button type="button"
               class="btn btn-secondary"
               data-bs-toggle="button"
-              @click="toggleDrawMode">그리기
+              @click="toggleDrawMode('brush')">그리기
       </button>
       <br>
-      <button type="button"
-              class="btn btn-secondary"
-              data-bs-toggle="button"
-              @click="test">테스트
-      </button>
-      <br>
+
       <!-- Default dropstart button -->
       <div class="btn-group dropstart">
         <button type="button"
@@ -130,54 +126,50 @@ export default {
         height: 1080,
         backgroundColor: '#2c4332',
         isDrawingMode: false,
-        erasable:false,
       });
-      this.$refs.canvas.width = 1920;
-      this.$refs.canvas.height = 1080;
+
       // 브러시 초기 설정
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.width = this.lineWidth;
-      console.log("클라이언트 ID : ",this.clientId);
-      console.log("초기 설정 : ",this.canvas);
+      this.brush = this.canvas.freeDrawingBrush;
+      this.brush.color = this.color;
+      this.brush.width = parseInt(this.lineWidth);
+
       // 이벤트 리스너 추가
 
         this.canvas.on('mouse:down', (e) => {
-          if (this.mode == 'brush'){
+          if (this.mode == 'brush' || this.mode == 'eraserBrush'){
             const pointer = this.canvas.getPointer(e);
             this.x = pointer.x
             this.y = pointer.y
             this.drawing = true;
             this.handleMouseDown(e)
-          } else if (this.mode == 'eraser'){
-            this.eraser(e)
-            // this.sendMessage('eraser',this.selectObj);
-            // console.log("eraser 모드 : ", this.selectObj);
           } else if (this.mode == 'click'){
             this.clickObject(e)
           }
         })
       this.canvas.on('mouse:move', (e) => {
-        if (this.mode == 'brush' && this.drawing == true){
+        if (this.mode == 'brush' && this.drawing == true || this.mode == 'eraserBrush' && this.drawing == true) {
           // prevXY 정의
           this.prevX = this.x;
           this.prevY = this.y;
           this.handleMouseMove(e)
         }
-
       })
       this.canvas.on('mouse:up', (e) => {
-        this.objectId = uuidv4();
-        this.handleMouseUp(e)
-
+        // this.drawing = false;
+        if (this.mode == 'brush'){
+          this.handleMouseUp(e)
+        } else if (this.mode == 'eraserBrush'){
+          this.handleMouseUp(e)
+        }
       })
 
       // add 될 때 uuid 부여하면 학생쪽도 생기는 이벤트니까 각각 다른 값 들어감 add 메서드에서 하자
-      // this.canvas.on('object:added', (e) => {
-      //   // uuid 값 부여함.
-      //   this.objectId = uuidv4();
-      //   e.target.id = this.objectId;
-      //   console.log("아이디 부여 : ",e.target.id)
-      // })
+      this.canvas.on('object:added', (e) => {
+        // uuid 값 부여함.
+        this.objectId = uuidv4();
+        e.target.id = this.objectId;
+        console.log("아이디 부여 : ",e.target.id)
+      })
 
       // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
       // 지금은 웹소켓의 설정으로 인해 다시 학생에게 추가된 객체에 대해서는 받고있는 상황.
@@ -200,98 +192,115 @@ export default {
     },
 
     // 지우개 커스텀 클래스 함수 정의
-    // EraserBrush: fabric.util.createClass(fabric.PencilBrush, {
-    //   _finalizeAndAddPath: function() {
-    //     const ctx = this.canvas.contextTop;
-    //     ctx.closePath();
-    //     if (this.decimate) {
-    //       this._points = this.decimatePoints(this._points, this.decimate);
-    //     }
-    //     const pathData = this.convertPointsToSVGPath(this._points).join('');
-    //     if (pathData === 'M 0 0 Q 0 0 0 0 L 0 0') {
-    //       this.canvas.requestRenderAll();
-    //       return;
-    //     }
-    //
-    //     const path = this.createPath(pathData);
-    //     path.globalCompositeOperation = 'destination-out';  // This is the key part for erasing
-    //     this.canvas.clearContext(this.canvas.contextTop);
-    //     this.canvas.add(path);
-    //     this.canvas.requestRenderAll();
-    //     this._resetShadow();
-    //   },
-    // }),
-    // activateEraserMode() {
-    //   this.canvas.isDrawingMode = true;
-    //   this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
-    //   this.canvas.freeDrawingBrush.width = this.lineWidth;  // Set eraser size
-    //
-    //   // Set up event listeners for eraser actions
-    //   this.canvas.on('mouse:up', this.handleEraserEvent);
-    // },
-    // handleEraserEvent(event) {
-    //   if (this.canvas.freeDrawingBrush instanceof this.EraserBrush) {
-    //     const erasedObject = this.canvas.getActiveObject();
-    //     if (erasedObject) {
-    //       const eraserData = {
-    //         id: erasedObject.id,
-    //         type: 'eraser',
-    //       };
-    //       this.sendMessage('eraser', eraserData);
-    //       this.canvas.remove(erasedObject);
-    //     }
-    //   }
-    // },
+    EraserBrush: fabric.util.createClass(fabric.PencilBrush, {
+        _finalizeAndAddPath: function() {
+          const ctx = this.canvas.contextTop;
+          ctx.closePath();
+          if (this.decimate) {
+            this._points = this.decimatePoints(this._points, this.decimate);
+          }
+          const pathData = this.convertPointsToSVGPath(this._points).join('');
+          if (pathData === 'M 0 0 Q 0 0 0 0 L 0 0') {
+            this.canvas.requestRenderAll();
+            return;
+          }
+
+          const path = this.createPath(pathData);
+          path.globalCompositeOperation = 'destination-out';  // 이 설정이 중요 지워지게하는 핵심임
+          this.canvas.clearContext(this.canvas.contextTop);
+          this.canvas.add(path);
+          this.canvas.requestRenderAll();
+          this._resetShadow();
+        },
+    }),
+
+
+    // 지우개 모드 가동
+    activateEraserMode(mode) {
+      this.mode = mode;
+      this.canvas.isDrawingMode = true;
+      this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
+      this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
+      this.canvas.freeDrawingBrush.color = this.canvas.backgroundColor;
+
+    },
+
     handleMouseDown(e) {
       const pointer = this.canvas.getPointer(e);
 
-      this.brush = this.canvas.freeDrawingBrush;
+      this.canvas.isDrawingMode = true;
+      // this.brush.color = this.color;
+      // this.brush.width = parseInt(this.lineWidth);
 
-      let drawData = {
-        x: pointer.x,
-        y: pointer.y,
-        color: this.color,
-        width: this.lineWidth,
-      };
+      if (this.mode == 'brush'){
 
-      if (this.drawing == true) {
-        this.canvas.isDrawingMode = true;
+        let drawData = {
+          x: pointer.x,
+          y: pointer.y,
+          color: this.color,
+          width: this.lineWidth,
+        };
 
-        this.canvas.freeDrawingBrush.color = this.color;
-        // this.canvas.freeDrawingBrush.trans = this.color;
-        this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
+        this.sendMessage('DRAW',drawData);
+        console.log("그리기 다운 : ",drawData)
+      } else if (this.mode == 'eraserBrush') {
 
-        console.log("마우스 다운")
+        // this.brush.width = parseInt(this.lineWidth);
+
+        let drawData = {
+          x: pointer.x,
+          y: pointer.y,
+          color: this.canvas.backgroundColor,
+          width: this.lineWidth,
+        };
+
+        this.sendMessage('eraserBrush',drawData);
+        console.log("지우개 다운 : ",drawData)
       }
-      this.sendMessage('DRAW',drawData)
-
     },
     handleMouseMove(e) {
-
+      this.canvas.isDrawingMode = true;
+      this.brush.color = this.color;
+      this.brush.width = parseInt(this.lineWidth);
       const pointer = this.canvas.getPointer(e);
       // 현재 좌표
       this.x = pointer.x;
       this.y = pointer.y;
 
-      let drawData = {
-        x: this.x,
-        y: this.y,
-        prevX: this.prevX,
-        prevY: this.prevY,
-        color: this.color,
-        width: this.lineWidth,
-      };
+      if (this.mode == 'brush'){
 
-      console.log("[this.prevXY] : ",this.prevX, this.prevY);
-      console.log("[this.xY] : ",this.x, this.y);
-      console.log("마우스 무브")
-      this.sendMessage('DRAW',drawData)
+        let drawData = {
+          x: this.x,
+          y: this.y,
+          prevX: this.prevX,
+          prevY: this.prevY,
+          color: this.color,
+          width: this.lineWidth,
+        };
+        console.log("브러쉬 무브",drawData);
+        this.sendMessage('DRAW',drawData)
+      } else if (this.mode == 'eraserBrush'){
+
+        let drawData = {
+          x: this.x,
+          y: this.y,
+          prevX: this.prevX,
+          prevY: this.prevY,
+          color: this.canvas.backgroundColor,
+          width: this.lineWidth,
+        };
+        console.log("지우개 무브",drawData);
+        this.sendMessage('eraserBrush',drawData)
+      }
+
+
     },
     handleMouseUp(e) {
-
       this.drawing = false;
-
-      console.log("마우스 업");
+      this.canvas.isDrawingMode = true;
+      this.brush.color = this.color;
+      this.brush.width = parseInt(this.lineWidth);
+      console.log("마우스 업", this.brush);
     },
 
     test(){
@@ -320,15 +329,15 @@ export default {
     // 선 굵기 변경
     changeLineWidth(e) {
       this.lineWidth = e.target.value;
-      this.canvas.freeDrawingBrush.width = this.lineWidth;
-      console.log("선 굵기 : ",this.canvas.freeDrawingBrush.width);
+      this.brush.width = parseInt(this.lineWidth);
+      console.log("선 굵기 : ",this.brush.width);
 
     },
     // 선 색상 변경
     changeColor(e){
       this.color = e.target.value;
-      this.canvas.freeDrawingBrush.color = this.color;
-      console.log('색깔 : ', this.canvas.freeDrawingBrush.color);
+      this.brush.color = this.color;
+      console.log('색깔 : ', this.brush.color);
     },
     changeFillColor(e){
       this.fillColor = e.target.value;
@@ -345,7 +354,6 @@ export default {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
-          id: this.objectId,
           clientId: this.clientId,
           data: event,
         });
@@ -387,6 +395,13 @@ export default {
           id: this.objectId,
           data: event,
         });
+      } else if (type == 'eraserBrush'){
+        this.message = JSON.stringify({
+          type: type,
+          sender: this.sender,
+          clientId: this.clientId,
+          data: event,
+        });
       }
       if (this.socket && this.socket.connected) {
         this.socket.publish({
@@ -413,7 +428,7 @@ export default {
         transparentCorners: false,
         hasControls: true,
         selectable: true,
-        evented: true,
+        erasable:false,
         id:uuidv4(),
         }
       )
@@ -421,7 +436,7 @@ export default {
       this.oldRect = rect;
       this.objectId = rect.id;
       this.canvas.add(rect);
-      this.canvas.setActiveObject(rect);
+      // this.canvas.setActiveObject(rect);
       this.canvas.renderAll();
 
       this.sendMessage("rect",rect);
@@ -495,13 +510,14 @@ export default {
       this.sendMessage('erase');
     },
     // 그리기 버튼
-    toggleDrawMode() {
-      this.mode = 'brush';
-
+    toggleDrawMode(mode) {
+      this.mode = mode;
       this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.lineWidth = this.lineWidth;
-
+      this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+      this.brush = this.canvas.freeDrawingBrush;
+      this.brush.color = this.color;
+      this.brush.width = parseInt(this.lineWidth);
+      console.log("그리기 버튼 : ", this.brush)
     },
     // 도형 추가 버튼
     toggleMode(mode) {
@@ -545,7 +561,7 @@ export default {
       if (clientId == this.clientId){
         return;
       }
-      if (type == 'DRAW') {
+      if (type == 'DRAW' || type == 'eraserBrush') {
 
         const { x, y, prevX, prevY, color, width } = data;
         console.log("학생 data : ",data);
