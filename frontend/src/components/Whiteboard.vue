@@ -9,6 +9,8 @@
       <br>
       <button type="button" class="btn btn-secondary" @click="activateEraserMode('eraserBrush')">드로잉 지우개</button>
       <br>
+      <button type="button" class="btn btn-secondary" @click="createGroup(objects)">그룹 Go!</button>
+      <br>
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
       <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @input="changeLineWidth"><br>
@@ -88,7 +90,7 @@ export default {
       message:{},
       drawing: false,
       erasedObjects: [],
-
+      objects:[],
       // 화면 속성 변수
 
       // 속성 변수
@@ -170,6 +172,10 @@ export default {
         this.objectId = uuidv4();
         e.target.id = this.objectId;
         console.log("아이디 부여 : ",e.target.id)
+        const a = this.canvas.getObjects();
+        console.log("a = ",a)
+        this.objects = a;
+
       })
 
       // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
@@ -225,6 +231,7 @@ export default {
       this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
       this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
       this.canvas.freeDrawingBrush.color = this.canvas.backgroundColor;
+      // this.canvas.freeDrawingBrush.selectable = false;
 
     },
 
@@ -232,16 +239,16 @@ export default {
       const pointer = this.canvas.getPointer(e);
 
       this.canvas.isDrawingMode = true;
-      // this.brush.color = this.color;
-      // this.brush.width = parseInt(this.lineWidth);
+      this.brush.color = this.color;
+      this.brush.width = parseInt(this.lineWidth);
 
       if (this.mode == 'brush'){
 
         let drawData = {
           x: pointer.x,
           y: pointer.y,
-          color: this.color,
-          width: this.lineWidth,
+          color: this.brush.color,
+          width: this.brush.width,
         };
 
         this.sendMessage('DRAW',drawData);
@@ -254,7 +261,7 @@ export default {
           x: pointer.x,
           y: pointer.y,
           color: this.canvas.backgroundColor,
-          width: this.lineWidth,
+          width: this.brush.width,
         };
 
         this.sendMessage('eraserBrush',drawData);
@@ -278,7 +285,7 @@ export default {
           prevX: this.prevX,
           prevY: this.prevY,
           color: this.color,
-          width: this.lineWidth,
+          width: this.brush.width,
         };
         console.log("브러쉬 무브",drawData);
         this.sendMessage('DRAW',drawData)
@@ -290,10 +297,13 @@ export default {
           prevX: this.prevX,
           prevY: this.prevY,
           color: this.canvas.backgroundColor,
-          width: this.lineWidth,
+          width: this.brush.width,
         };
-        console.log("지우개 무브",drawData);
-        this.sendMessage('eraserBrush',drawData)
+        // console.log("지우개 무브",drawData);
+        // this.sendMessage('eraserBrush',drawData)
+
+        const a = this.canvas.containsPoint(pointer);
+        console.log("aaaaaaaaaa : ", a)
       }
 
 
@@ -309,30 +319,58 @@ export default {
 
       } else if (this.mode == 'eraserBrush'){
 
-        this.erasedObjects = this.getErasedObjects(); // 추출한 함수를 담는 배열
-        if (this.erasedObjects.length > 0){
-          const group = new fabric.Group(this.erasedObjects);
-          console.log("그룹 정보 : ", group);
-          this.canvas.add(group);
-          this.canvas.renderAll();
-        }
+        // const erasedObjectsAfterGet = this.getErasedObjects();   // 추출한 함수를 담는 배열
+        //
+        //
+        // if (erasedObjectsAfterGet.length > 0){
+        //   console.log("여기 도냐")
+        //   const group = new fabric.Group(erasedObjectsAfterGet);
+        //   console.log("그룹 정보 : ", group);
+        //   this.canvas.add(group);
+        //   this.canvas.renderAll();
+        // }
+
+
+
+
+        console.log("마우스 업", this.brush);
+
 
       }
-      console.log("마우스 업", this.brush);
+    },
+    createGroup(e){
+      console.log("eeeeeee",e)
+      const erasedObjectsAfterGet = e;   // 추출한 함수를 담는 배열
+
+
+      if (erasedObjectsAfterGet.length > 0){
+        console.log("여기 도냐")
+        const group = new fabric.Group(erasedObjectsAfterGet);
+        console.log("그룹 정보 : ", group);
+        this.canvas.add(group);
+        this.canvas.renderAll();
+      }
     },
     // 지워진 객체들을 추출하는 함수
     getErasedObjects(){
+      // 기존 배열 초기화
+      const erasedObjects = [];
       const objects = this.canvas.getObjects();
 
       for (let obj of objects){
         if (obj.globalCompositeOperation === 'destination-out'){
           console.log("지워진 객체 : ",obj)
-          this.erasedObjects.push(obj);
+          const cloneObj = fabric.util.object.clone(obj);
+
+          erasedObjects.push(cloneObj);
         }
       }
+      this.erasedObjects = erasedObjects;
+      console.log("erasedObjects : ",erasedObjects);
+      return erasedObjects;
       // console.log("지워진 객체 정보 : ", this.erasedObjects)
-      return this.erasedObjects;
     },
+
     test(){
       // rect에 집어넣은 변수값으로 생성된다. 이게 되네...
       const newRect = new fabric.Rect(this.rect);
