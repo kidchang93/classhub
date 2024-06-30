@@ -9,8 +9,8 @@
       <br>
       <button type="button" class="btn btn-secondary" @click="activateEraserMode('eraserBrush')">드로잉 지우개</button>
       <br>
-      <button type="button" class="btn btn-secondary" @click="createGroup(objects)">그룹 Go!</button>
-      <br>
+<!--      <button type="button" class="btn btn-secondary" @click="createGroup(objects)">그룹 Go!</button>-->
+<!--      <br>-->
       <label for="drawing-line-width">Line width : </label>
       <span class="info">{{ lineWidth }}</span>
       <input type="range" :value="lineWidth" min="0" max="100" id="drawing-line-width" ref="drawingLineWidthEl" @input="changeLineWidth"><br>
@@ -58,7 +58,7 @@
 <script>
 import { mapState } from "vuex";
 import {fabric} from "fabric";
-import {parse, v4 as uuidv4} from "uuid";
+import { v4 as uuidv4} from "uuid";
 export default {
   name: "Whiteboard",
   props: {
@@ -91,6 +91,7 @@ export default {
       drawing: false,
       erasedObjects: [],
       objects:[],
+      targetObject: [],
       // 화면 속성 변수
 
       // 속성 변수
@@ -158,7 +159,7 @@ export default {
         }
       })
       this.canvas.on('mouse:up', (e) => {
-        // this.drawing = false;
+        this.drawing = false;
         if (this.mode == 'brush'){
           this.handleMouseUp(e)
         } else if (this.mode == 'eraserBrush'){
@@ -252,7 +253,7 @@ export default {
         };
 
         this.sendMessage('DRAW',drawData);
-        console.log("그리기 다운 : ",drawData)
+
       } else if (this.mode == 'eraserBrush') {
 
         // this.brush.width = parseInt(this.lineWidth);
@@ -265,7 +266,7 @@ export default {
         };
 
         this.sendMessage('eraserBrush',drawData);
-        console.log("지우개 다운 : ",drawData)
+
       }
     },
     handleMouseMove(e) {
@@ -287,7 +288,7 @@ export default {
           color: this.color,
           width: this.brush.width,
         };
-        console.log("브러쉬 무브",drawData);
+
         this.sendMessage('DRAW',drawData)
       } else if (this.mode == 'eraserBrush'){
 
@@ -299,11 +300,9 @@ export default {
           color: this.canvas.backgroundColor,
           width: this.brush.width,
         };
-        // console.log("지우개 무브",drawData);
-        // this.sendMessage('eraserBrush',drawData)
 
-        const a = this.canvas.containsPoint(pointer);
-        console.log("aaaaaaaaaa : ", a)
+        this.sendMessage('eraserBrush',drawData)
+
       }
 
 
@@ -313,64 +312,51 @@ export default {
       this.canvas.isDrawingMode = true;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
+
       if (this.mode == 'brush'){
 
         console.log("마우스 업", this.brush);
 
       } else if (this.mode == 'eraserBrush'){
-
-        // const erasedObjectsAfterGet = this.getErasedObjects();   // 추출한 함수를 담는 배열
-        //
-        //
-        // if (erasedObjectsAfterGet.length > 0){
-        //   console.log("여기 도냐")
-        //   const group = new fabric.Group(erasedObjectsAfterGet);
-        //   console.log("그룹 정보 : ", group);
-        //   this.canvas.add(group);
-        //   this.canvas.renderAll();
-        // }
-
-
-
-
+        console.log("up : ", this.targetObject);
+        this.getObject(e);  // 여기서 targetObject에 해당 객체 정보 넣음
+        const eraseObj = [];  // 배열 초기화 시키고
+        eraseObj.push(e.target,this.targetObject)// 배열에 그룹 만들 애들 넣어줌.
+        console.log("push : ", eraseObj);
+        // this.objects 하면 지금 캔버스에 추가된 모든 object를 불러옴 -> 이거는 쓰면 안됨.
+        this.createGroup(eraseObj);   // 그리고 그룹 만들어
+        // 접근은 좋은데 드래그로 선택하면 이상해짐
+        // mouseUp 할때 뭔가 걸리는거거나 group 쪽이 안맞는거일수도?
         console.log("마우스 업", this.brush);
 
 
       }
     },
-    createGroup(e){
-      console.log("eeeeeee",e)
-      const erasedObjectsAfterGet = e;   // 추출한 함수를 담는 배열
+    createGroup(obj){
 
+      const upObj = obj;
 
-      if (erasedObjectsAfterGet.length > 0){
-        console.log("여기 도냐")
-        const group = new fabric.Group(erasedObjectsAfterGet);
-        console.log("그룹 정보 : ", group);
+      console.log("createGroup - obj : ",upObj)
+      if (upObj.length > 0){
+
+        const group = new fabric.Group(upObj);
+        console.log("createGroup - group : ",group)
         this.canvas.add(group);
         this.canvas.renderAll();
       }
     },
-    // 지워진 객체들을 추출하는 함수
-    getErasedObjects(){
-      // 기존 배열 초기화
-      const erasedObjects = [];
-      const objects = this.canvas.getObjects();
+    getObject(e){
+      const pointer = this.canvas.getPointer(e);
+      // 경로에 객체가 있을 시
+      this.canvas.getObjects().forEach((obj) => {
+        if (obj.containsPoint(pointer)){
 
-      for (let obj of objects){
-        if (obj.globalCompositeOperation === 'destination-out'){
-          console.log("지워진 객체 : ",obj)
-          const cloneObj = fabric.util.object.clone(obj);
-
-          erasedObjects.push(cloneObj);
+          this.targetObject = obj;
+          console.log("targetObject : ",this.targetObject)
+          // 마우스 위치에 있는 객체 정보 불러옴
         }
-      }
-      this.erasedObjects = erasedObjects;
-      console.log("erasedObjects : ",erasedObjects);
-      return erasedObjects;
-      // console.log("지워진 객체 정보 : ", this.erasedObjects)
+      })
     },
-
     test(){
       // rect에 집어넣은 변수값으로 생성된다. 이게 되네...
       const newRect = new fabric.Rect(this.rect);
@@ -390,9 +376,7 @@ export default {
       if (selectObj){
         this.canvas.remove(selectObj);
         this.sendMessage('eraser',selectObj);
-
       }
-
     },
     // 선 굵기 변경
     changeLineWidth(e) {
