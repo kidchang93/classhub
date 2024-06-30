@@ -335,7 +335,10 @@ export default {
         const group = new fabric.Group(upObj,{
           erasable:'deep',
         });
-        // group.removeWithUpdate(upObj);
+        // 이거 하나 넣었다고 그룹은 안되는데
+        // 아까 현상은 없어짐... 뭐지 진짜
+        group._restoreObjectsState();
+
         console.log("createGroup - group : ",group)
         this.canvas.add(group);
         this.canvas.renderAll();
