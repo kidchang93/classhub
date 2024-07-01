@@ -49,7 +49,7 @@
       <button type="button"
               class="btn btn-secondary"
               data-bs-toggle="button"
-              @click="clickObject">객체 선택
+              @click="toggleMode('click')">객체 선택
       </button>
     </div>
 
@@ -200,8 +200,6 @@ export default {
         }
       })
 
-
-      // 지우기 끝난 후 호출되는 이벤트 리스너
       this.canvas.renderAll();
       console.log("initCanvas");
 
@@ -398,6 +396,7 @@ export default {
     deleteObject(e){
 
       const pointer = this.canvas.getPointer(e);
+      // 포인터로 찾으면 안되겠다.
       const selectObj = this.canvas.getObjects().find(obj => obj.containsPoint(pointer));
       console.log("selectObj : ", selectObj);
       if (selectObj){
@@ -544,8 +543,8 @@ export default {
       this.circle = circle;
       this.oldCircle = circle;
       this.canvas.add(circle);
-      this.canvas.setActiveObject(circle);
-      // this.canvas.renderAll();
+
+      this.canvas.renderAll();
       this.sendMessage("circle",circle);
       console.log("circle", circle);
       console.log("도형 추가")
@@ -570,21 +569,25 @@ export default {
       this.triangle = triangle;
       this.oldTriangle = triangle;
       this.canvas.add(triangle);
-      this.canvas.setActiveObject(triangle);
-      // this.canvas.renderAll();
+      this.canvas.renderAll();
       this.sendMessage("triangle",triangle);
       console.log("triangle", triangle);
       console.log("도형 추가")
     },
     // 객체 선택
-    selectObject(e){
-
-      const selectObject = this.canvas.getActiveObject();
-
-      console.log("selectObject : ",selectObject);
-      this.canvas.renderAll();
-      this.sendMessage(selectObject);
-    },
+    // selectObject(e){
+    //   this.canvas.on('mouse:down',(e) => {
+    //     const targetObject = e.target;
+    //     console.log('타겟 : ', targetObject);
+    //   })
+    //   const selectObject = this.canvas.getActiveObjects();
+    //   selectObject.forEach(obj => {
+    //
+    //   })
+    //   console.log("selectObject : ",selectObject);
+    //   this.canvas.renderAll();
+    //   this.sendMessage(selectObject);
+    // },
     // 전체삭제 버튼
     buttonErase() {
       alert("지울거야?")
@@ -635,18 +638,29 @@ export default {
         this.mode = 'triangle'
         console.log(this.mode)
         this.addTriangle()
+
       } else if (mode == 'delete') {
         console.log("삭제: ",mode)
         this.canvas.isDrawingMode = false;
         this.drawing = false;
         this.mode = 'delete';
+      } else if (mode == 'click'){
+        this.canvas.isDrawingMode = false;
+        this.drawing = false;
+        this.mode = 'click';
       }
     },
     clickObject(e){
       this.mode = 'click';
       this.canvas.isDrawingMode = false;
       this.drawing = false;
-      this.objectId = e.target;
+      const targetData = e.target;
+      if (targetData != null){
+        this.objectId = e.target.id;
+      } else {
+        return
+      }
+
       console.log("지금 객체는 : ",  this.objectId);
     },
 
@@ -676,6 +690,7 @@ export default {
       }
       if (type == 'rect' || type == 'modRect'){
         const rect = new fabric.Rect(data);
+
         // let removeObjects = this.canvas.getObjects();
         // console.log("removeObject : ",removeObjects)
         // removeObjects.forEach((obj) => {
