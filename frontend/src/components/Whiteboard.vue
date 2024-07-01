@@ -5,7 +5,7 @@
     <div id="designTool">
       <button type="button" class="btn btn-secondary" @click="buttonErase">새로 시작</button>
       <br>
-      <button type="button" class="btn btn-secondary" @click="eraser">삭제</button>
+      <button type="button" class="btn btn-secondary" @click="toggleMode('delete')">삭제</button>
       <br>
       <button type="button" class="btn btn-secondary" @click="activateEraserMode('eraserBrush')">드로잉 지우개</button>
       <br>
@@ -163,6 +163,8 @@ export default {
           this.handleMouseDown(e)
         } else if (this.mode == 'click'){
           this.clickObject(e)
+        } else if (this.mode == 'delete'){
+          this.deleteObject(e)
         }
       })
       this.canvas.on('mouse:move', (e) => {
@@ -404,10 +406,7 @@ export default {
     // },
 
 
-    eraser(e){
-      this.drawing = false;
-      this.canvas.isDrawingMode = false;
-      this.mode = 'eraser';
+    deleteObject(e){
 
       const pointer = this.canvas.getPointer(e);
       const selectObj = this.canvas.getObjects().find(obj => obj.containsPoint(pointer));
@@ -645,6 +644,11 @@ export default {
         this.mode = 'triangle'
         console.log(this.mode)
         this.addTriangle()
+      } else if (mode == 'delete') {
+        console.log("삭제: ",mode)
+        this.canvas.isDrawingMode = false;
+        this.drawing = false;
+        this.mode = 'delete';
       }
     },
     clickObject(e){
