@@ -187,11 +187,11 @@ export default {
       // add 될 때 uuid 부여하면 학생쪽도 생기는 이벤트니까 각각 다른 값 들어감 add 메서드에서 하자
       this.canvas.on('object:added', (e) => {
         // uuid 값 부여함.
-        this.objectId = uuidv4();
-        e.target.id = this.objectId;
-        console.log("아이디 부여 : ",e.target.id)
-        e.target.erasable = false;
-        console.log("지우기 가능? : ", e.target.erasable)
+        // this.objectId = uuidv4();
+        // e.target.id = this.objectId;
+        // console.log("아이디 부여 : ",e.target.id)
+        // e.target.erasable = false;
+        // console.log("지우기 가능? : ", e.target.erasable)
 
       })
 
@@ -462,6 +462,7 @@ export default {
           type: type,
           sender: this.sender,
           clientId: this.clientId,
+          id: this.objectId,
           data: event,
         });
       } else if (type == 'triangle') {
@@ -469,6 +470,7 @@ export default {
           type: type,
           sender: this.sender,
           clientId: this.clientId,
+          id: this.objectId,
           data: event,
         });
       } else if (type == 'erase') {
@@ -548,7 +550,7 @@ export default {
         selectable: true,
         evented: true,
         objectCaching: true,
-
+        id:uuidv4(),
       })
       this.circle = circle;
       this.oldCircle = circle;
@@ -574,6 +576,7 @@ export default {
         hasControls: true,
         selectable: true,
         evented: true,
+        id:uuidv4(),
       })
       this.triangle = triangle;
       this.oldTriangle = triangle;
@@ -606,7 +609,6 @@ export default {
       // this.canvas.clear();
       this.canvas.renderAll();
       this.sendMessage('erase');
-
 
       console.log("지금? : ", this.canvas.backgroundColor)
       console.log('전체 삭제 후 : ', this.mode)
@@ -707,17 +709,13 @@ export default {
       }
       if (type == 'eraser'){
         console.log("data.id : ",data.id);
-        const objectToRemove = this.canvas.getObjects().find(obj => obj.id === data.id);
-
-        console.log("objectToRemove : ", objectToRemove);
-        if (objectToRemove){
-
-          this.canvas.remove(objectToRemove);
-          this.canvas.renderAll();
-
-        }
-
-
+        const objectToRemove = this.canvas.getObjects().find(obj => {
+          if (obj.id == data.id){
+            this.canvas.remove(obj);
+            this.canvas.renderAll();
+          }
+        });
+        console.log('objectToRemove ',objectToRemove);
 
       }
     }
