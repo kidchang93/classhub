@@ -690,51 +690,17 @@ export default {
       }
       if (type == 'rect' || type == 'modRect'){
         console.log("받은 데이터 : ", data)
-        const newRect = new fabric.Rect({
-          originX	:	data.left,
-          originY	:	data.top,
-          left	:	data.left,
-          top	:	data.top,
-          width	:	data.width,
-          height	:	data.height,
-          fill: data.fill,
-          stroke	:	data.stroke,
-          strokeWidth	:	data.strokeWidth,
-          strokeDashArray	:	data.strokeDashArray,
-          strokeLineCap	:	data.strokeLineCap,
-          strokeDashOffset	:	data.strokeDashOffset,
-          strokeLineJoin	:	data.strokeLineJoin,
-          strokeUniform	:	data.strokeUniform,
-          strokeMiterLimit	:	data.strokeMiterLimit,
-          scaleX	:	data.scaleX,
-          scaleY	:	data.scaleY,
-          angle	:	data.angle,
-          flipX	:	data.flipX,
-          flipY	:	data.flipY,
-          opacity	:	data.opacity,
-          shadow	:	data.shadow,
-          visible	:	data.visible,
-          backgroundColor	: data.backgroundColor,
-          fillRule	:	data.fillRule,
-          paintFirst	:	data.paintFirst,
-          globalCompositeOperation	:	data.globalCompositeOperation,
-          skewX	:	data.skewX,
-          skewY	:	data.skewY,
-          rx	:	data.rx,
-          ry	:	data.ry,
 
-      });
+        let removeObjects = this.canvas.getObjects();
+        console.log("removeObject : ",removeObjects)
+        removeObjects.forEach((obj) => {
+          if (obj.id != data.id){
+            console.log("obj : ", obj);
+          } else if (obj.id == data.id)
 
-        // let removeObjects = this.canvas.getObjects();
-        // console.log("removeObject : ",removeObjects)
-        // removeObjects.forEach((obj) => {
-        //   if (obj.id == data.id){
-        //     console.log("obj : ", obj);
-        //     // this.canvas.remove(obj);
-        //   }
-        //
-        // })
-
+            this.canvas.remove(obj);
+        })
+        const newRect = new fabric.Rect(data);
         this.canvas.add(newRect);
         this.canvas.renderAll();
 
