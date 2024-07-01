@@ -690,8 +690,7 @@ export default {
       }
       if (type == 'rect' || type == 'modRect'){
         console.log("받은 데이터 : ", data)
-        var rect = new fabric.Rect({
-          type:'rect',
+        const newRect = new fabric.Rect({
           originX	:	data.left,
           originY	:	data.top,
           left	:	data.left,
@@ -736,7 +735,7 @@ export default {
         //
         // })
 
-        this.canvas.add(rect);
+        this.canvas.add(newRect);
         this.canvas.renderAll();
 
       }
