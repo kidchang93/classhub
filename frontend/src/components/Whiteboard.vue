@@ -3,9 +3,9 @@
   <canvas class="fabric" ref="canvas"></canvas>
 
     <div id="designTool">
-      <button type="button" class="btn btn-secondary" @click="buttonErase">모두 지우기</button>
+      <button type="button" class="btn btn-secondary" @click="buttonErase">새로 시작</button>
       <br>
-      <button type="button" class="btn btn-secondary" @click="eraser">도형 지우개</button>
+      <button type="button" class="btn btn-secondary" @click="eraser">삭제</button>
       <br>
       <button type="button" class="btn btn-secondary" @click="activateEraserMode('eraserBrush')">드로잉 지우개</button>
       <br>
@@ -78,6 +78,7 @@ export default {
       // fabric
       mode:'',
       brush:{},
+      eraserBrush:{},
       x:0,
       y:0,
       lineCap:'round',
@@ -90,7 +91,7 @@ export default {
       message:{},
       drawing: false,
       erasedObjects: [],
-      objects:[],
+      objects:{},
       targetObject: [],
       // 화면 속성 변수
 
@@ -133,10 +134,17 @@ export default {
       });
 
       // 브러시 초기 설정
+      this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
       this.brush = this.canvas.freeDrawingBrush;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
       this.brush.evented = false;
+
+      // 지우개 브러쉬 초기 설정
+      this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
+      this.eraserBrush = this.canvas.freeDrawingBrush;
+      this.eraserBrush.color = this.canvas.backgroundColor;
+      this.eraserBrush.width = parseInt(this.lineWidth);
 
       // 이벤트 리스너 추가
       // 그리기, 드로잉 관련 마우스 업 시 select 하지 못하게 함.
@@ -146,19 +154,17 @@ export default {
         this.canvas.add(path);
 
       })
-
-
-        this.canvas.on('mouse:down', (e) => {
-          if (this.mode == 'brush' || this.mode == 'eraserBrush'){
-            const pointer = this.canvas.getPointer(e);
-            this.x = pointer.x
-            this.y = pointer.y
-            this.drawing = true;
-            this.handleMouseDown(e)
-          } else if (this.mode == 'click'){
-            this.clickObject(e)
-          }
-        })
+      this.canvas.on('mouse:down', (e) => {
+        if (this.mode == 'brush' || this.mode == 'eraserBrush'){
+          const pointer = this.canvas.getPointer(e);
+          this.x = pointer.x
+          this.y = pointer.y
+          this.drawing = true;
+          this.handleMouseDown(e)
+        } else if (this.mode == 'click'){
+          this.clickObject(e)
+        }
+      })
       this.canvas.on('mouse:move', (e) => {
         if (this.mode == 'brush' && this.drawing == true || this.mode == 'eraserBrush' && this.drawing == true) {
           // prevXY 정의
@@ -205,7 +211,7 @@ export default {
 
 
       // 지우기 끝난 후 호출되는 이벤트 리스너
-
+      this.canvas.renderAll();
       console.log("initCanvas");
 
     },
@@ -220,17 +226,18 @@ export default {
           }
           const pathData = this.convertPointsToSVGPath(this._points).join('');
           if (pathData === 'M 0 0 Q 0 0 0 0 L 0 0') {
-            this.canvas.requestRenderAll();
-            return;
+            this.canvas.renderAll();
+            // return;
           }
 
           const path = this.createPath(pathData);
           path.globalCompositeOperation = 'destination-out';  // 이 설정이 중요 지워지게하는 핵심임
           path.selectable = false;
-          this.canvas.clearContext(this.canvas.contextTop);
+          this.canvas.clearContext(ctx);
           this.canvas.add(path);
-          this.canvas.requestRenderAll();
+          this.canvas.renderAll();
           this._resetShadow();
+          console.log("커스텀 지우개 생성")
         },
     }),
 
@@ -238,11 +245,13 @@ export default {
     activateEraserMode(mode) {
       this.mode = mode;
       this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
-      this.canvas.freeDrawingBrush.width = parseInt(this.lineWidth);
-      this.canvas.freeDrawingBrush.color = this.canvas.backgroundColor;
-      // this.canvas.freeDrawingBrush.selectable = false;
 
+      // 지우개 브러쉬 초기 설정
+      this.canvas.freeDrawingBrush = new this.EraserBrush(this.canvas);
+      this.eraserBrush = this.canvas.freeDrawingBrush;
+      this.eraserBrush.color = this.canvas.backgroundColor;
+      this.eraserBrush.width = parseInt(this.lineWidth);
+      this.canvas.renderAll();
     },
 
     handleMouseDown(e) {
@@ -251,6 +260,9 @@ export default {
       this.canvas.isDrawingMode = true;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
+
+      this.eraserBrush.color = this.canvas.backgroundColor;
+      this.eraserBrush.width = parseInt(this.lineWidth);
 
       if (this.mode == 'brush'){
 
@@ -270,8 +282,8 @@ export default {
         let drawData = {
           x: pointer.x,
           y: pointer.y,
-          color: this.canvas.backgroundColor,
-          width: this.brush.width,
+          color: this.eraserBrush.color,
+          width: this.eraserBrush.width ,
         };
 
         this.sendMessage('eraserBrush',drawData);
@@ -282,15 +294,18 @@ export default {
       this.canvas.isDrawingMode = true;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
-      const pointer = this.canvas.getPointer(e);
 
+      this.eraserBrush.color = this.canvas.backgroundColor;
+      this.eraserBrush.width = parseInt(this.lineWidth);
+
+      const pointer = this.canvas.getPointer(e);
 
       // 현재 좌표
       this.x = pointer.x;
       this.y = pointer.y;
       // 경로에 객체가 있을 때 마우스 위치에 있는 객체 정보 불러옴
-      const isOverObject = this.canvas.getObjects().some(obj => obj.containsPoint(pointer));
-      console.log("객체 있음? : ",isOverObject);
+      // const isOverObject = this.canvas.getObjects().some(obj => obj.containsPoint(pointer));
+      // console.log("객체 있음? : ",isOverObject);
 
       if (this.mode == 'brush'){
 
@@ -299,7 +314,7 @@ export default {
           y: this.y,
           prevX: this.prevX,
           prevY: this.prevY,
-          color: this.color,
+          color: this.brush.color,
           width: this.brush.width,
         };
 
@@ -311,32 +326,28 @@ export default {
           y: this.y,
           prevX: this.prevX,
           prevY: this.prevY,
-          color: this.canvas.backgroundColor,
+          color: this.eraserBrush.color,
           width: this.brush.width,
         };
-
         this.sendMessage('eraserBrush',drawData)
-
       }
-
-
-
     },
     handleMouseUp(e) {
       this.drawing = false;
       this.canvas.isDrawingMode = true;
-      this.brush.color = this.color;
-      this.brush.width = parseInt(this.lineWidth);
 
       if (this.mode == 'brush'){
 
+        this.brush.color = this.color;
+        this.brush.width = parseInt(this.lineWidth);
         console.log("마우스 업", this.brush);
 
       } else if (this.mode == 'eraserBrush'){
+
+        this.eraserBrush.color = this.canvas.backgroundColor;
+        this.eraserBrush.width = parseInt(this.lineWidth);
         // this.getObject(e);  // 여기서 targetObject에 해당 객체 정보 넣음
-
-        console.log("마우스 업", this.brush);
-
+        console.log("마우스 업", this.eraserBrush);
 
       }
     },
@@ -410,6 +421,7 @@ export default {
     changeLineWidth(e) {
       this.lineWidth = e.target.value;
       this.brush.width = parseInt(this.lineWidth);
+      this.eraserBrush.width = parseInt(this.lineWidth);
       console.log("선 굵기 : ",this.brush.width);
 
     },
@@ -584,9 +596,21 @@ export default {
     },
     // 전체삭제 버튼
     buttonErase() {
-      this.canvas.clear();
+      alert("지울거야?")
+      console.log("지금? : ", this.canvas.backgroundColor)
+      let removeObjects = this.canvas.getObjects();
+      removeObjects.forEach((obj) => {
+        this.canvas.remove(obj);
+      })
+      console.log("배열 : ",removeObjects)
+
+      // this.canvas.clear();
       this.canvas.renderAll();
       this.sendMessage('erase');
+
+
+      console.log("지금? : ", this.canvas.backgroundColor)
+      console.log('전체 삭제 후 : ', this.mode)
     },
     // 그리기 버튼
     toggleDrawMode(mode) {
@@ -675,6 +699,7 @@ export default {
       }
       if (type == 'erase'){
         this.canvas.clear();
+
       }
       if (type == 'eraser'){
         console.log("data.id : ",data.id);
