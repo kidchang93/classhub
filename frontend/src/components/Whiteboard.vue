@@ -139,11 +139,12 @@ export default {
       this.brush.evented = false;
 
       // 이벤트 리스너 추가
-
+      // 그리기, 드로잉 관련 마우스 업 시 select 하지 못하게 함.
       this.canvas.on('path:created', (e)=> {
         var path = e.path;
         path.selectable = false;
         this.canvas.add(path);
+
       })
 
 
@@ -181,9 +182,8 @@ export default {
         this.objectId = uuidv4();
         e.target.id = this.objectId;
         console.log("아이디 부여 : ",e.target.id)
-        const a = this.canvas.getObjects();
-        console.log("a = ",a)
-        this.objects = a;
+        e.target.erasable = false;
+        console.log("지우기 가능? : ", e.target.erasable)
 
       })
 
@@ -283,9 +283,14 @@ export default {
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
       const pointer = this.canvas.getPointer(e);
+
+
       // 현재 좌표
       this.x = pointer.x;
       this.y = pointer.y;
+      // 경로에 객체가 있을 때 마우스 위치에 있는 객체 정보 불러옴
+      const isOverObject = this.canvas.getObjects().some(obj => obj.containsPoint(pointer));
+      console.log("객체 있음? : ",isOverObject);
 
       if (this.mode == 'brush'){
 
@@ -313,6 +318,7 @@ export default {
         this.sendMessage('eraserBrush',drawData)
 
       }
+
 
 
     },
@@ -500,9 +506,8 @@ export default {
         cornerColor: "#98bed8",
         cornerSize: 15,
         transparentCorners: false,
-        hasControls: true,
+        dirty: true,
         selectable: true,
-        erasable:true,
         id:uuidv4(),
         }
       )
