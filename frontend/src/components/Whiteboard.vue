@@ -184,29 +184,18 @@ export default {
         }
       })
 
-      // add 될 때 uuid 부여하면 학생쪽도 생기는 이벤트니까 각각 다른 값 들어감 add 메서드에서 하자
-      this.canvas.on('object:added', (e) => {
-        // uuid 값 부여함.
-        // this.objectId = uuidv4();
-        // e.target.id = this.objectId;
-        // console.log("아이디 부여 : ",e.target.id)
-        // e.target.erasable = false;
-        // console.log("지우기 가능? : ", e.target.erasable)
-
-      })
-
       // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
-      // 지금은 웹소켓의 설정으로 인해 다시 학생에게 추가된 객체에 대해서는 받고있는 상황.
-      // 학생쪽에서 해당 객체를 컨트롤하면 보내진 않음.
       this.canvas.on('object:modified', (e) => {
         if (this.mode == 'rect'){
-          let modRect = this.rect;
+          let modRect = e.target;
+          console.log("움직였어 데이터 : ",modRect);
+          console.log(this.rect);
           this.sendMessage('rect',modRect);
         } else if (this.mode == 'circle'){
-          let modCircle = this.circle;
+          let modCircle = e.target;
           this.sendMessage('circle', modCircle);
         } else if (this.mode == 'triangle'){
-          let modTriangle = this.triangle;
+          let modTriangle = e.target;
           this.sendMessage('triangle', modTriangle);
         }
       })
@@ -685,13 +674,21 @@ export default {
         context.stroke();
 
       }
-      if (type == 'rect'){
+      if (type == 'rect' || type == 'modRect'){
+        const rect = new fabric.Rect(data);
+        // let removeObjects = this.canvas.getObjects();
+        // console.log("removeObject : ",removeObjects)
+        // removeObjects.forEach((obj) => {
+        //   if (obj.id == data.id){
+        //     console.log("obj : ", obj);
+        //     // this.canvas.remove(obj);
+        //   }
+        //
+        // })
 
-        const newRect = new fabric.Rect(data);
-
-        this.canvas.add(newRect);
-
+        this.canvas.add(rect);
         this.canvas.renderAll();
+
       }
       if (type == 'circle'){
         const newCircle = new fabric.Circle(data);
