@@ -136,8 +136,16 @@ export default {
       this.brush = this.canvas.freeDrawingBrush;
       this.brush.color = this.color;
       this.brush.width = parseInt(this.lineWidth);
+      this.brush.evented = false;
 
       // 이벤트 리스너 추가
+
+      this.canvas.on('path:created', (e)=> {
+        var path = e.path;
+        path.selectable = false;
+        this.canvas.add(path);
+      })
+
 
         this.canvas.on('mouse:down', (e) => {
           if (this.mode == 'brush' || this.mode == 'eraserBrush'){
@@ -218,6 +226,7 @@ export default {
 
           const path = this.createPath(pathData);
           path.globalCompositeOperation = 'destination-out';  // 이 설정이 중요 지워지게하는 핵심임
+          path.selectable = false;
           this.canvas.clearContext(this.canvas.contextTop);
           this.canvas.add(path);
           this.canvas.requestRenderAll();
@@ -318,58 +327,58 @@ export default {
         console.log("마우스 업", this.brush);
 
       } else if (this.mode == 'eraserBrush'){
-        this.getObject(e);  // 여기서 targetObject에 해당 객체 정보 넣음
+        // this.getObject(e);  // 여기서 targetObject에 해당 객체 정보 넣음
 
         console.log("마우스 업", this.brush);
 
 
       }
     },
-    createGroup(obj){
-      // 여기서 뭔가 가공을 해야되나...
-      const upObj = obj;
-
-      console.log("createGroup - obj : ",upObj)
-      if (upObj.length > 0){
-
-        const group = new fabric.Group(upObj,{
-          erasable:'deep',
-        });
-        // 이거 하나 넣었다고 그룹은 안되는데
-        // 아까 현상은 없어짐... 뭐지 진짜
-        group._restoreObjectsState();
-
-        console.log("createGroup - group : ",group)
-        this.canvas.add(group);
-        this.canvas.renderAll();
-      }
-
-    },
-    getObject(e){
-      console.log("getObject - e.target: ",e.target)
-
-      const pointer = this.canvas.getPointer(e);
-      // 경로에 객체가 있을 시
-      this.canvas.getObjects().forEach((obj) => {
-        if (obj.containsPoint(pointer)){
-
-          this.targetObject.push(obj);
-          console.log("targetObject : ",this.targetObject)
-          // 마우스 위치에 있는 객체 정보 불러옴
-        }
-      })
-      console.log("getObject - this.targetObject: ",this.targetObject)
-      // 하나는 proxy로 감싸져있고 하나는 그냥 klass임 그래서 뭔가 이상해짐
-      const eraseObj = [e.target,this.targetObject];  // 배열 초기화 시키고
-      // eraseObj.push(e.target,this.targetObject)// 배열에 그룹 만들 애들 넣어줌.
-      console.log("push : ", eraseObj);
-      // this.objects 하면 지금 캔버스에 추가된 모든 object를 불러옴 -> 이거는 쓰면 안됨.
-      // eraseObj 로 넣으나 this.targetObject로 넣으나 결과는 똑같음
-      // 근데 this.targetObject로 넣으면 애초에 proxy로 들어가서 그나마 console에서 보기는 좋음.
-      this.createGroup(this.targetObject);   // 그리고 그룹 만들어
-      // 접근은 좋은데 드래그로 선택하면 이상해짐
-      // mouseUp 할때 뭔가 걸리는거거나 group 쪽이 안맞는거일수도?
-    },
+    // createGroup(obj){
+    //   // 여기서 뭔가 가공을 해야되나...
+    //   const upObj = obj;
+    //
+    //   console.log("createGroup - obj : ",upObj)
+    //   if (upObj.length > 0){
+    //
+    //     const group = new fabric.Group(upObj,{
+    //       erasable:'deep',
+    //     });
+    //     // 이거 하나 넣었다고 그룹은 안되는데
+    //     // 아까 현상은 없어짐... 뭐지 진짜
+    //     // group._restoreObjectsState();
+    //
+    //     console.log("createGroup - group : ",group)
+    //     this.canvas.add(group);
+    //     this.canvas.renderAll();
+    //   }
+    //
+    // },
+    // getObject(e){
+    //   console.log("getObject - e.target: ",e.target)
+    //
+    //   const pointer = this.canvas.getPointer(e);
+    //   // 경로에 객체가 있을 시
+    //   this.canvas.getObjects().forEach((obj) => {
+    //     if (obj.containsPoint(pointer)){
+    //
+    //       this.targetObject.push(obj);
+    //       console.log("targetObject : ",this.targetObject)
+    //       // 마우스 위치에 있는 객체 정보 불러옴
+    //     }
+    //   })
+    //   console.log("getObject - this.targetObject: ",this.targetObject)
+    //   // 하나는 proxy로 감싸져있고 하나는 그냥 klass임 그래서 뭔가 이상해짐
+    //   const eraseObj = [e.target,this.targetObject];  // 배열 초기화 시키고
+    //   // eraseObj.push(e.target,this.targetObject)// 배열에 그룹 만들 애들 넣어줌.
+    //   console.log("push : ", eraseObj);
+    //   // this.objects 하면 지금 캔버스에 추가된 모든 object를 불러옴 -> 이거는 쓰면 안됨.
+    //   // eraseObj 로 넣으나 this.targetObject로 넣으나 결과는 똑같음
+    //   // 근데 this.targetObject로 넣으면 애초에 proxy로 들어가서 그나마 console에서 보기는 좋음.
+    //   this.createGroup(this.targetObject);   // 그리고 그룹 만들어
+    //   // 접근은 좋은데 드래그로 선택하면 이상해짐
+    //   // mouseUp 할때 뭔가 걸리는거거나 group 쪽이 안맞는거일수도?
+    // },
     // test(){
     //   // rect에 집어넣은 변수값으로 생성된다. 이게 되네...
     //   const newRect = new fabric.Rect(this.rect);
