@@ -59,6 +59,7 @@
 import { mapState } from "vuex";
 import {fabric} from "fabric";
 import { v4 as uuidv4} from "uuid";
+import {all} from "axios";
 export default {
   name: "Whiteboard",
   props: {
@@ -186,11 +187,11 @@ export default {
 
       // 이 행위 자체로는 선생님 쪽에서 움직이는 객체에 대해 전송한다.
       this.canvas.on('object:modified', (e) => {
+        console.log("작업전 : ", this.canvas.getObjects())
         if (this.mode == 'rect'){
           let modRect = e.target;
           console.log("움직였어 데이터 : ",modRect);
-          console.log(this.rect);
-          this.sendMessage('rect',modRect);
+          this.sendMessage('modRect',modRect);
         } else if (this.mode == 'circle'){
           let modCircle = e.target;
           this.sendMessage('circle', modCircle);
@@ -436,8 +437,8 @@ export default {
           clientId: this.clientId,
           data: event,
         });
-        console.log("지금 모드는 : ", this.mode)
-      } else if (type == 'rect') {
+
+      } else if (type == 'rect' || type == 'modRect') {
         this.message = JSON.stringify({
           type: type,
           sender: this.sender,
@@ -688,66 +689,88 @@ export default {
         context.stroke();
 
       }
-      if (type == 'rect' || type == 'modRect'){
-        // console.log("받은 데이터 : ", data)
-        //
-        // let removeObjects = this.canvas.getObjects();
-        // console.log("removeObject : ",removeObjects)
-        // removeObjects.forEach((obj) => {
-        //   if (obj.id != data.id){
-        //     console.log("obj : ", obj);
-        //   } else if (obj.id == data.id)
-        //
-        //     this.canvas.remove(obj);
-        // })
-        const context = this.canvas.getContext('2d');
-        context.beginPath();
-        context.originX	=	data.left,
-        context.originY	=	data.top,
-        context.left = data.left,
-        context.top	=	data.top,
-        context.width	=	data.width,
-        context.height =data.height,
-        context.fillColor = data.fill,
-        context.stroke = data.stroke,
-        context.strokeWidth	=	data.strokeWidth,
-        context.strokeDashArray = data.strokeDashArray,
-        context.strokeLineCap	=	data.strokeLineCap,
-        context.strokeDashOffset = data.strokeDashOffset,
-        context.strokeLineJoin	=	data.strokeLineJoin,
-        context.strokeUniform = data.strokeUniform,
-        context.strokeMiterLimit = data.strokeMiterLimit,
-        context.scaleX = data.scaleX,
-        context.scaleY = data.scaleY,
-        context.angle = data.angle,
-        context.flipX = data.flipX,
-        context.flipY = data.flipY,
-        context.opacity = data.opacity,
-        context.shadow = data.shadow,
-        context.visible =	data.visible,
-        context.backgroundColor	= data.backgroundColor,
-        context.fillRule	=	data.fillRule,
-        context.paintFirst = data.paintFirst,
-        context.globalCompositeOperation = data.globalCompositeOperation,
-        context.skewX	= data.skewX,
-        context.skewY	=	data.skewY,
-        context.rx = data.rx,
-        context.ry = data.ry,
 
-        // context.beginPath();
-        // context.type = data.type;
-        // context.top = data.top;
-        // context.left = data.left;
-        // context.height = data.height;
-        // context.fillColor = data.fill;
-        console.log(context)
-        // context.moveTo(prevX, prevY);
-        // context.lineTo(x, y);
-        //this.canvas.add(context);
+      if (type == 'rect'){
+        const newRect = new fabric.Rect(data);
+        this.canvas.add(newRect);
         this.canvas.renderAll();
-        console.log("성공")
 
-      }
+      } else if (type == 'modRect') {
+        console.log("들어옴?")
+        // 캔버스상 객체 중에서 구독중인 id 랑 같은 객체 찾기
+        const allObjects = this.canvas.getObjects();
+        console.log("allObjects : ",allObjects)
+        const findObject = allObjects.find((obj) => obj.id == data.id);
+        findObject.set({
+            left: data.left,
+            top: data.top,
+            width: data.width,
+            height: data.height,
+            fill: data.fill,
+            stroke: data.stroke,
+            strokeWidth: data.strokeWidth,
+            strokeDashArray: data.strokeDashArray,
+            strokeLineCap: data.strokeLineCap,
+            strokeDashOffset: data.strokeDashOffset,
+            strokeLineJoin: data.strokeLineJoin,
+            strokeUniform: data.strokeUniform,
+            strokeMiterLimit: data.strokeMiterLimit,
+            scaleX: data.scaleX,
+            scaleY: data.scaleY,
+            angle: data.angle,
+            flipX: data.flipX,
+            flipY: data.flipY,
+            opacity: data.opacity,
+            shadow: data.shadow,
+            visible: data.visible,
+            backgroundColor: data.backgroundColor,
+            fillRule: data.fillRule,
+            paintFirst: data.paintFirst,
+            globalCompositeOperation: data.globalCompositeOperation,
+            skewX: data.skewX,
+            skewY: data.skewY,
+            rx: data.rx,
+            ry: data.ry
+          })
+        console.log("findObject", findObject)
+          this.canvas.renderAll();
+
+        }
+        // if (existingObject != null) {
+        //   existingObject.set({
+        //     left: data.left,
+        //     top: data.top,
+        //     width: data.width,
+        //     height: data.height,
+        //     fill: data.fill,
+        //     stroke: data.stroke,
+        //     strokeWidth: data.strokeWidth,
+        //     strokeDashArray: data.strokeDashArray,
+        //     strokeLineCap: data.strokeLineCap,
+        //     strokeDashOffset: data.strokeDashOffset,
+        //     strokeLineJoin: data.strokeLineJoin,
+        //     strokeUniform: data.strokeUniform,
+        //     strokeMiterLimit: data.strokeMiterLimit,
+        //     scaleX: data.scaleX,
+        //     scaleY: data.scaleY,
+        //     angle: data.angle,
+        //     flipX: data.flipX,
+        //     flipY: data.flipY,
+        //     opacity: data.opacity,
+        //     shadow: data.shadow,
+        //     visible: data.visible,
+        //     backgroundColor: data.backgroundColor,
+        //     fillRule: data.fillRule,
+        //     paintFirst: data.paintFirst,
+        //     globalCompositeOperation: data.globalCompositeOperation,
+        //     skewX: data.skewX,
+        //     skewY: data.skewY,
+        //     rx: data.rx,
+        //     ry: data.ry
+        //   })
+        //   this.canvas.renderAll();
+        // }
+
       if (type == 'circle'){
         const newCircle = new fabric.Circle(data);
         // this.canvas.clear(this.oldCircle);
