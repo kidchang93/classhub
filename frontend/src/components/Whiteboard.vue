@@ -689,20 +689,63 @@ export default {
 
       }
       if (type == 'rect' || type == 'modRect'){
-        console.log("받은 데이터 : ", data)
+        // console.log("받은 데이터 : ", data)
+        //
+        // let removeObjects = this.canvas.getObjects();
+        // console.log("removeObject : ",removeObjects)
+        // removeObjects.forEach((obj) => {
+        //   if (obj.id != data.id){
+        //     console.log("obj : ", obj);
+        //   } else if (obj.id == data.id)
+        //
+        //     this.canvas.remove(obj);
+        // })
+        const context = this.canvas.getContext('2d');
+        context.beginPath();
+        context.originX	=	data.left,
+        context.originY	=	data.top,
+        context.left = data.left,
+        context.top	=	data.top,
+        context.width	=	data.width,
+        context.height =data.height,
+        context.fillColor = data.fill,
+        context.stroke = data.stroke,
+        context.strokeWidth	=	data.strokeWidth,
+        context.strokeDashArray = data.strokeDashArray,
+        context.strokeLineCap	=	data.strokeLineCap,
+        context.strokeDashOffset = data.strokeDashOffset,
+        context.strokeLineJoin	=	data.strokeLineJoin,
+        context.strokeUniform = data.strokeUniform,
+        context.strokeMiterLimit = data.strokeMiterLimit,
+        context.scaleX = data.scaleX,
+        context.scaleY = data.scaleY,
+        context.angle = data.angle,
+        context.flipX = data.flipX,
+        context.flipY = data.flipY,
+        context.opacity = data.opacity,
+        context.shadow = data.shadow,
+        context.visible =	data.visible,
+        context.backgroundColor	= data.backgroundColor,
+        context.fillRule	=	data.fillRule,
+        context.paintFirst = data.paintFirst,
+        context.globalCompositeOperation = data.globalCompositeOperation,
+        context.skewX	= data.skewX,
+        context.skewY	=	data.skewY,
+        context.rx = data.rx,
+        context.ry = data.ry,
 
-        let removeObjects = this.canvas.getObjects();
-        console.log("removeObject : ",removeObjects)
-        removeObjects.forEach((obj) => {
-          if (obj.id != data.id){
-            console.log("obj : ", obj);
-          } else if (obj.id == data.id)
-
-            this.canvas.remove(obj);
-        })
-        const newRect = new fabric.Rect(data);
-        this.canvas.add(newRect);
+        // context.beginPath();
+        // context.type = data.type;
+        // context.top = data.top;
+        // context.left = data.left;
+        // context.height = data.height;
+        // context.fillColor = data.fill;
+        console.log(context)
+        // context.moveTo(prevX, prevY);
+        // context.lineTo(x, y);
+        //this.canvas.add(context);
         this.canvas.renderAll();
+        console.log("성공")
 
       }
       if (type == 'circle'){
